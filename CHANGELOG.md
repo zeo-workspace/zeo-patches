@@ -31,6 +31,12 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.18.0_p20261121] — 2026-11-21
+
+Zeo `0.18.0_p20261121`: the series on Zed `2f808b3c`, `0002`'s getDiagnostics, step 4‴'s fixes. Minor,
+not patch: `0137`–`0140` change what Zeo shows. The series is 134. Built and tested locally, all
+cores (operator, 2026-11-21).
+
 - **Bump** to Zed `2f808b3c` (2026-11-21, six commits past `0a514d7e`): `bump.sh --apply` against a
   scratch overlay, refresh clean -- every patch's header and every added or removed line byte-identical,
   only context and offsets moved; no registry crate changed in `Cargo.lock`, so `CRATES` stands; rebrand:
