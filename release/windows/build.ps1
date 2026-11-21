@@ -114,7 +114,31 @@ $env:ZEO_VOICE_CPU_BASELINE = 'x86-64-v3'
 $env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'
 if ($Jobs -le 0) { $Jobs = [Environment]::ProcessorCount }
 $env:CARGO_BUILD_JOBS = "$Jobs"
-Log 'environment' "version=$Version commit=$Commit jobs=$Jobs webrtc=$webrtc"
+
+# sccache wraps rustc, as RUSTC_WRAPPER does in the Linux build (build-in-container.sh), so a new
+# version recompiles only what changed: without it every version was a full compile, because
+# target\ is reset per version below. The two do not conflict -- sccache keys an entry on its
+# content (sources, flags, rustc), not on mtimes, so the stale-mtime failure the reset exists for
+# cannot reach it. The paths in the key, C:\zeo\src and the cargo home, are the same for every
+# version. The cache lives on the guest's own disk, C:\zeo\sccache, which persists between builds
+# like target\ does (operator's choice, 2026-11-21).
+$sccacheRoot = Join-Path (Split-Path $Src -Parent) 'sccache-bin'
+if (Test-Path $sccacheRoot) { Remove-Item -Recurse -Force $sccacheRoot }
+New-Item -ItemType Directory -Path $sccacheRoot | Out-Null
+tar.exe -xf $pinned['sccache-v0.18.0-x86_64-pc-windows-msvc.zip'] -C $sccacheRoot
+$sccache = Join-Path $sccacheRoot 'sccache-v0.18.0-x86_64-pc-windows-msvc\sccache.exe'
+if (-not (Test-Path $sccache)) { throw "build event=sccache-layout file=$sccache" }
+$env:RUSTC_WRAPPER = $sccache
+$env:SCCACHE_DIR = 'C:\zeo\sccache'
+if (-not $env:SCCACHE_CACHE_SIZE) { $env:SCCACHE_CACHE_SIZE = '30G' }
+# 0: the server never stops on its own. Its default 600 s idle timeout ended it during the final
+# link, which compiles nothing for longer than that, and --show-stats then read a fresh server's
+# zeros (the first measured build, 2026-11-21); this script stops it itself once stats are read.
+$env:SCCACHE_IDLE_TIMEOUT = '0'
+# A server left by an earlier run keeps the environment it started with; start this run's own.
+try { & $sccache --stop-server *> $null } catch { }
+& $sccache --zero-stats | Out-Null
+Log 'environment' "version=$Version commit=$Commit jobs=$Jobs webrtc=$webrtc sccache=$env:SCCACHE_DIR"
 
 # target\ survives between runs (release-windows.sh leaves it) so a rerun recompiles little, but
 # only for the same version: tar keeps the Zed archive's mtimes, which predate a build of the
@@ -136,6 +160,13 @@ if (Test-Path $setup) { Remove-Item -Force $setup }
 $started = Get-Date
 & "$PSHOME\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File '.\script\bundle-windows.ps1'
 Log 'bundled' "minutes=$([int]((Get-Date) - $started).TotalMinutes)"
+# What sccache saved this run: the measurement that tells a warm cache from a cold one.
+$stats = (& $sccache --show-stats | Out-String)
+$stats.TrimEnd() -split "`r?`n" | ForEach-Object { Write-Output "sccache  $_" }
+$hits = if ($stats -match '(?m)^Cache hits\s+(\d+)') { $Matches[1] } else { '?' }
+$misses = if ($stats -match '(?m)^Cache misses\s+(\d+)') { $Matches[1] } else { '?' }
+Log 'sccache' "hits=$hits misses=$misses"
+try { & $sccache --stop-server *> $null } catch { }
 
 $inno = Join-Path $Src 'inno\x86_64'
 # zeo.exe writes UTF-8; read with the console's OEM code page, its en dash came out as "ΓÇô" in
@@ -167,6 +198,7 @@ $info = @(
     "pvr=$Pvr",
     "zed-commit=$Commit",
     "rustflags=$env:RUSTFLAGS",
+    "sccache=0.18.0 hits=$hits misses=$misses",
     "cli-version=$cliVersion",
     "remote-server=$(if (Test-Path (Join-Path $inno 'zeo-remote-server')) { 'bundled' } else { 'absent' })"
 ) + (Get-Content 'C:\zeo-toolchain.txt')
