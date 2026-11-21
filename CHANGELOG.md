@@ -41,6 +41,22 @@ bumps inside a range are summarised rather than listed one by one.
   clean files left out without `uri`. It used to send one flat text item per diagnostic, which the CLI's
   post-edit diagnostics read as no baseline at all. New `src/diagnostics.rs`, 6 tests; the crate's 58
   pass; reasoning in the header.
+- **Changed** `0107` (proposal §6.56): the block look painted in AutoHeight too (row highlights with a
+  left border, outside Full/Minimap), CommonMark fence rules, refresh on `BufferEdited`, no auto-close
+  while text is marked, `element_hover` for code rows. The proposal's "last empty row dropped" did not
+  reproduce (anchor at the end is `Anchor::Max`); a guard test stays.
+- **Added** `0137` (§6.57): the default pin is Claude Agent (Plus)'s only, laid out with the check and
+  the star by `menu_row_markers`; removed from the native agent's menus. A new patch, not an `0010`
+  amendment: `0059`, `0073`, `0135` rewrote those files, so it only applies on top of them.
+- **Added** `0138` (§6.51): the Agent Tasks panel lists only its project's tasks; Delete All Archived
+  scoped; a record whose thread is gone is hidden (operator, 2026-11-21). Test fixtures give seeded
+  sessions thread metadata (`adopt_orphan_sessions`).
+- **Added** `0139` (§6.58): the collapsed terminal card is one row. **Added** `0140` (§6.59): "Open
+  Recent File" on the Welcome page.
+- `0002`, `0052`, `0058`, `0067`: context only, regenerated over `0137`/`0139`.
+- **Changed** `scripts/test.sh`: `editor` joins `CRATES` -- `0107` patches it and no run had tested it
+  with the series (1237 tests, all pass).
+- Xvfb proof: the hub's `docs/assets/zeo-wave3-fixes-2026-11-21/`.
 
 ## [0.17.1_p20261120] — 2026-11-21 (tagged)
 

@@ -117,10 +117,10 @@ its uri. An unknown `minSeverity` is an INVALID_REQUEST naming the four choices.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 48a2574..07417c4 100644
+index 731f8f2..fc8d3a9 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -3011,6 +3011,35 @@ version = "0.7.6"
+@@ -3041,6 +3041,35 @@ version = "0.7.6"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
  
@@ -156,7 +156,7 @@ index 48a2574..07417c4 100644
  [[package]]
  name = "cli"
  version = "0.1.0"
-@@ -22555,6 +22584,7 @@ dependencies = [
+@@ -22590,6 +22619,7 @@ dependencies = [
   "channel",
   "chrono",
   "clap",
@@ -165,10 +165,10 @@ index 48a2574..07417c4 100644
   "client",
   "clock",
 diff --git a/Cargo.toml b/Cargo.toml
-index 6a894cf..3588c35 100644
+index 28dea3b..120f950 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -28,6 +28,7 @@ members = [
+@@ -29,6 +29,7 @@ members = [
      "crates/call",
      "crates/call_hierarchy",
      "crates/channel",
@@ -176,7 +176,7 @@ index 6a894cf..3588c35 100644
      "crates/cli",
      "crates/client",
      "crates/clock",
-@@ -311,6 +312,7 @@ buffer_diff = { path = "crates/buffer_diff" }
+@@ -313,6 +314,7 @@ buffer_diff = { path = "crates/buffer_diff" }
  call = { path = "crates/call" }
  call_hierarchy = { path = "crates/call_hierarchy" }
  channel = { path = "crates/channel" }
@@ -185,7 +185,7 @@ index 6a894cf..3588c35 100644
  client = { path = "crates/client" }
  clock = { path = "crates/clock" }
 diff --git a/assets/keymaps/default-linux.json b/assets/keymaps/default-linux.json
-index db71a22..462fce9 100644
+index 9fc583d..4fe242f 100644
 --- a/assets/keymaps/default-linux.json
 +++ b/assets/keymaps/default-linux.json
 @@ -141,6 +141,7 @@
@@ -197,7 +197,7 @@ index db71a22..462fce9 100644
        "ctrl-shift-backspace": "editor::GoToPreviousChange",
        "ctrl-shift-alt-backspace": "editor::GoToNextChange",
 diff --git a/assets/keymaps/default-macos.json b/assets/keymaps/default-macos.json
-index 11f2ced..ca2c6ac 100644
+index 8b2460b..5293fae 100644
 --- a/assets/keymaps/default-macos.json
 +++ b/assets/keymaps/default-macos.json
 @@ -163,6 +163,7 @@
@@ -209,7 +209,7 @@ index 11f2ced..ca2c6ac 100644
        "alt-enter": "editor::OpenSelectionsInMultibuffer",
        "alt-cmd-f": "text_finder::Toggle",
 diff --git a/assets/keymaps/default-windows.json b/assets/keymaps/default-windows.json
-index 95c208c..baf6ab5 100644
+index b7cf8c1..c609579 100644
 --- a/assets/keymaps/default-windows.json
 +++ b/assets/keymaps/default-windows.json
 @@ -137,6 +137,7 @@
@@ -4553,10 +4553,10 @@ index 4c9d083..9920993 100644
 +    }
 +}
 diff --git a/crates/zed/Cargo.toml b/crates/zed/Cargo.toml
-index 8a2dc0b..3eb041c 100644
+index 1448050..524771c 100644
 --- a/crates/zed/Cargo.toml
 +++ b/crates/zed/Cargo.toml
-@@ -85,6 +85,7 @@ call.workspace = true
+@@ -86,6 +86,7 @@ call.workspace = true
  call_hierarchy.workspace = true
  channel.workspace = true
  chrono.workspace = true
@@ -4565,10 +4565,10 @@ index 8a2dc0b..3eb041c 100644
  cli.workspace = true
  client.workspace = true
 diff --git a/crates/zed/src/main.rs b/crates/zed/src/main.rs
-index b9eb541..4cd3591 100644
+index 2aab736..b396727 100644
 --- a/crates/zed/src/main.rs
 +++ b/crates/zed/src/main.rs
-@@ -710,6 +710,7 @@ fn main() {
+@@ -713,6 +713,7 @@ fn main() {
          acp_tools::init(cx);
          zed::telemetry_log::init(cx);
          zed::remote_debug::init(cx);
@@ -4577,10 +4577,10 @@ index b9eb541..4cd3591 100644
          web_search::init(cx);
          web_search_providers::init(app_state.client.clone(), app_state.user_store.clone(), cx);
 diff --git a/crates/zed/src/zed.rs b/crates/zed/src/zed.rs
-index 4d13f97..0763756 100644
+index ac2038c..2436076 100644
 --- a/crates/zed/src/zed.rs
 +++ b/crates/zed/src/zed.rs
-@@ -6264,6 +6264,7 @@ mod tests {
+@@ -6444,6 +6444,7 @@ mod tests {
                  "buffer_search",
                  "call_hierarchy",
                  "channel_modal",
@@ -4589,7 +4589,7 @@ index 4d13f97..0763756 100644
                  "client",
                  "collab",
 diff --git a/crates/zed_actions/src/lib.rs b/crates/zed_actions/src/lib.rs
-index c6e640c..5a9e0bb 100644
+index 76ca85c..6d9263b 100644
 --- a/crates/zed_actions/src/lib.rs
 +++ b/crates/zed_actions/src/lib.rs
 @@ -569,6 +569,19 @@ pub mod settings_profile_selector {
