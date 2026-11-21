@@ -31,6 +31,17 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+- **Bump** to Zed `2f808b3c` (2026-11-21, six commits past `0a514d7e`): `bump.sh --apply` against a
+  scratch overlay, refresh clean -- every patch's header and every added or removed line byte-identical,
+  only context and offsets moved; no registry crate changed in `Cargo.lock`, so `CRATES` stands; rebrand:
+  252 "Zed" literals, nothing new. Gates: `test.sh --doc` 6483/6483 (local, 32 cores, operator's call),
+  `verify.sh` 130/130, `check-sync` in sync.
+- **Changed** `0002`: `getDiagnostics` answers in the shape the CLI parses (`parseDiagnosticResult`,
+  CLI 2.1.329) -- one compact JSON array, one entry per file -- with VS Code 2.1.328's `minSeverity` and
+  clean files left out without `uri`. It used to send one flat text item per diagnostic, which the CLI's
+  post-edit diagnostics read as no baseline at all. New `src/diagnostics.rs`, 6 tests; the crate's 58
+  pass; reasoning in the header.
+
 ## [0.17.1_p20261120] — 2026-11-21 (tagged)
 
 Zeo `0.17.1_p20261120`: `patches/zeo-0.17.0_p20261120` plus `0136`, copied forward to
