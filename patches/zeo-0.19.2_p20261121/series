@@ -697,6 +697,15 @@
 0139-agent-ui-the-collapsed-terminal-card-is-one-row.patch
 # 0140: "Open Recent File" (0117) on the Welcome page, after "Open Project" (§6.59).
 0140-workspace-open-recent-file-on-the-welcome-page.patch
+# 0142: the pinned message opens with a fade and a growing height (not a list item, so §6.52's
+# objection does not hold); the composer gets a scrollbar once a draft outgrows it (§6.66).
+0142-agent-ui-pinned-message-transition-and-composer-scrollbar.patch
+# 0143: tool, terminal and edit cards show their state's buttons (ExpandVertical; ChevronDown or
+# ChevronUp, then FoldVertical); the minimized tasks card ends in Maximize (§6.67).
+0143-agent-ui-card-icons-say-the-state-and-the-tasks-pill-opens.patch
+# 0145: a row whose turn ended while a _claude/tasks task still runs shows the background
+# spinner, not Plus's Terminal fallback icon (§6.68).
+0145-sidebar-a-running-task-after-the-turn-shows-the-background-spinner.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -723,6 +732,12 @@
 # 0141: jail limits (memory, CPU, processes; a disk quota brings the task cap) and a
 # state root per project -- its own home, /tmp and Claude login (proposal §6.54).
 0141-agent-sandbox-jail-limits-and-a-state-root-per-project.patch
+# 0144: the limits as - / + steppers, sizes in their largest unit, one debounced write (§6.62).
+0144-settings-ui-the-jail-s-limits-are-steppers.patch
+# 0146: every jail masks the paths naming the machine and pins the CPUs its quota pays for;
+# agent_sandbox.mask_host passes --mask-host; claude.ai connectors off unless a project turns
+# them on; an MCP server the jail cannot start is left out with a notice (§6.63, §6.64).
+0146-agent-sandbox-hide-the-host-pin-cpus-drop-unreachable-mcp-servers.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
