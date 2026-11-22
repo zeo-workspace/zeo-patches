@@ -709,6 +709,17 @@
 # 0147: Zeo's skills (~/.agents/skills, <project>/.agents/skills) reach Plus as plugin
 # directories in session/new _meta.claudeCode.options.plugins (§6.69 step 2).
 0147-agent-servers-zeo-skills-reach-plus-as-plugins.patch
+# 0148: context_server's raw request -- the result as JSON or the error object whole, the
+# same cancellation -- and the server's instructions, for the MCP-over-ACP relay (§6.69).
+0148-context-server-a-raw-request-that-keeps-the-server-s-error.patch
+# 0149: Zeo's running MCP servers reach Claude Agent (Plus) over its ACP connection
+# (MCP-over-ACP, mcpCapabilities.acp) instead of as command lines: no second copy per
+# session, no API key in the agent's argv; agent.mcp_servers_over_acp, default on (§6.69, §6.13).
+0149-agent-servers-mcp-servers-reach-claude-agent-plus-over-acp.patch
+# 0151: zeo-lsp -- the project's language servers as one more MCP-over-ACP server for Plus:
+# diagnostics, definition, references, hover, document symbols, read-only; agent.zeo_lsp,
+# default on (§6.13).
+0151-agent-servers-zeo-lsp-language-servers-for-claude-agent-plus.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -743,6 +754,13 @@
 # server the jail cannot start is left out with a notice; Zeo's skills mapped read-only
 # (§6.63, §6.64, §6.69).
 0146-agent-sandbox-hide-the-host-pin-cpus-drop-unreachable-mcp-servers.patch
+# 0150: a jail reaches no MCP server proxied by 0149 until its own list names one -- a proxied
+# server runs outside the jail (§6.64); the list is the jail page's to write.
+0150-agent-servers-a-jail-reaches-no-proxied-mcp-server-by-default.patch
+# 0152: a jail's capabilities, chosen per project on the Agent Sandbox page -- which of Zeo's
+# MCP servers (none by default; proxied ones kept outside the jail's view; one carrying a
+# secret asks first), Zeo's skills, claude.ai connectors (§6.64 step 2).
+0152-agent-sandbox-a-jail-s-capabilities-chosen-per-project.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
