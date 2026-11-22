@@ -711,12 +711,14 @@
 0052-devtools-bridge.patch
 
 # @feature: ai-jail
-# @default: off
+# @platform: linux
 # 0057: the Agent Sandbox settings (story 043) -- Zeo starts the Claude adapters
 # of a project through ai-jail, with a command it builds from user-only settings,
 # and refuses to start them when the jail is on and unusable. Its own group, after
-# devtools-bridge and before test; USE ai-jail is off by default, so the portable
-# builds skip it (@default: off). 0050/0051 apply on top of it, with or without it.
+# devtools-bridge and before test. USE ai-jail is on by default since 0.19.2, so the
+# Linux releases ship it; ai-jail does not exist on Windows, whose build skips it
+# (@platform: linux). Shipping it turns nothing on: agent_sandbox.enabled stays false.
+# 0050/0051 apply on top of it, with or without it.
 0057-agent-sandbox-settings.patch
 # 0141: jail limits (memory, CPU, processes; a disk quota brings the task cap) and a
 # state root per project -- its own home, /tmp and Claude login (proposal §6.54).

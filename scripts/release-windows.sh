@@ -130,7 +130,7 @@ main() {
 		(cd "${src}" && patch -p1 --no-backup-if-mismatch --quiet <"${patches}/${patch}") ||
 			die 1 "${patch} does not apply"
 		applied+=("${patch}")
-	done < <(release_patches "${patches}/series")
+	done < <(release_patches "${patches}/series" windows)
 	log "series-applied count=${#applied[@]}"
 	cp "${files}/app-icon-zeo.png" "${files}/app-icon-zeo@2x.png" "${src}/crates/zed/resources/"
 	cp "${brand}/rendered/app-icon-zeo.ico" "${src}/crates/zed/resources/windows/"

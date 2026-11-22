@@ -2326,6 +2326,15 @@ test_release_patches_skips_default_off_groups() {
 	assert_status 0 "${status}" && assert_contains "${out}" "PASS:" && ok
 }
 
+# --- release/portable: release_patches honours `# @platform:` (ai-jail is Linux-only) ---
+test_release_patches_skips_other_platforms_groups() {
+	case_start "portable release_patches: a group marked '# @platform: linux' ships on linux and is skipped on windows"
+	local out status
+	out="$(ZP_REPO="${REPO_ROOT}" bash "${SCRIPTS}/tests/release-patches-platform.sh" 2>&1)"
+	status=$?
+	assert_status 0 "${status}" && assert_contains "${out}" "PASS:" && ok
+}
+
 # --- lab.sh: builds on the lab host, proven against a local fake host ---------
 test_lab_builds_detached_and_fetches_checked() {
 	case_start "lab.sh: sends the working tree, runs release-portable detached under podman, reports state, refuses a 2nd build, fetches with checksums"
@@ -3042,6 +3051,7 @@ main() {
 		test_xvfb_proof_drag_xdotool_failure_fails_the_step
 
 		test_release_patches_skips_default_off_groups
+		test_release_patches_skips_other_platforms_groups
 		test_release_portable_untilde_artefacts
 		test_lab_builds_detached_and_fetches_checked
 		test_guest_lab_start_waits_for_a_slow_qemu
