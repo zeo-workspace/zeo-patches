@@ -31,6 +31,38 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.20.0_p20261121] — 2026-11-22
+
+Zeo `0.20.0_p20261121`: step 4⁗ of the proposal (§6.62–§6.69) on the same Zed `2f808b3c`. Minor:
+`0142`–`0147` add settings and UI. The series is 141. Gates on bentoo-lab: full `test.sh`
+7980/7980 (job `20261122-181448-e10f8e`), then agent_sandbox + agent_servers 533/533 after the
+last `0146` fix (job `…184642-c6db16`); clippy clean in the touched files; `verify.sh` 141/141.
+
+- **Changed** `0134` (§6.66 ask 89): the pinned card's avatar stays put on expand (one row height,
+  `PINNED_ROW_HEIGHT`).
+- **Added** `0142` (USE `claude-agent-acp-plus`, after `0140`, §6.66 asks 91, 96): the pinned body
+  fades in and grows over 150 ms (reduce motion honoured, collapse instant); the composer gets a
+  vertical scrollbar while the draft overflows.
+- **Added** `0143` (§6.67 asks 90, 93): card buttons per state; the step is maximized → minimized,
+  no longer a ring; the tasks pill ends in Maximize.
+- **Added** `0145` (§6.68 ask 92): a sidebar row counts running `_claude/tasks` tasks as background
+  work, so a turn that ended with a task still running shows the spinner; Claude Agent (Plus) gets
+  `IconName::AiClaude` instead of the Terminal fallback.
+- **Added** `0147` (§6.69 step 2): Zeo's skills (`~/.agents/skills`, `<project>/.agents/skills`)
+  reach Plus and the TUI adapter as manifest-less local plugins in `_meta.claudeCode.options`.
+  `paths` moves to a normal dependency of agent_servers; `Cargo.lock` unchanged.
+- **Added** `0144` (USE `ai-jail`, after `0141`, §6.62): the jail limits as steppers, one debounced
+  write.
+- **Added** `0146` (USE `ai-jail`, after `0144`, §6.63, §6.64 step 1, §6.69 jail half): `--mask` of
+  the paths naming the machine in every jail; `agent_sandbox.mask_host` (off by default, probe-gated
+  `--mask-host`, needs `sys-apps/ai-jail-3.5.0-r2`); opt-in disjoint CPU reservation
+  (`agent_sandbox.limits.reserve_cpus`, `--cpus`); claude.ai connectors off in jails
+  (`ENABLE_CLAUDEAI_MCP_SERVERS=false`, `agent_sandbox.claude_ai_connectors`); stdio MCP servers
+  outside the jail's visible roots left out of `session/new` with a notice; the skills folders
+  mapped read-only.
+- `0051`, `0052`, `0057`, `0058`, `0063`, `0067`, `0141`: context only, regenerated.
+- Xvfb proof: the hub's `docs/assets/zeo-lane-zeo-2026-11-22/`.
+
 ## [0.19.2_p20261121] — 2026-11-22
 
 Zeo `0.19.2_p20261121`: a second fix to `0141` and the ai-jail group in every Linux release, on
