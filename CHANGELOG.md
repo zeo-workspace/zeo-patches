@@ -31,6 +31,32 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.19.2_p20261121] — 2026-11-22
+
+Zeo `0.19.2_p20261121`: a second fix to `0141` and the ai-jail group in every Linux release, on
+the same Zed `2f808b3c`.
+
+- **Changed** the series: the `ai-jail` group loses `# @default: off` and gains
+  `# @platform: linux`, a new marker `release/portable/release-patches.sh` honours (second
+  argument, default `linux`; `release-windows.sh` passes `windows`), so the portable builds ship
+  0057 + 0141 and Windows does not -- ai-jail is Linux-only (operator, 2026-11-22). Test:
+  `scripts/tests/release-patches-platform.sh` (Red seen), in `selftest.sh`.
+- **Changed** `0141`: a start with the jail off records whether ai-jail is installed
+  (`LaunchRecord::ai_jail_missing`, checked at launch); without it the thread's lock is disabled
+  with a tooltip naming `sys-apps/ai-jail 3.5.0-r1`, and the settings switches cannot turn the jail
+  on (they can still turn it off).
+
+- **Fixed** `0141`: restarting the agent for the jail (the lock icon, §6.50) resumed the thread's
+  session in a config directory that never held its transcript -- the jail's own since §6.54 --
+  and failed with "Resource not found" (operator, 2026-11-22, a new project). `agent_ui`'s new
+  `agent_jail_restart` copies `<config>/projects/<cwd>/<session>.jsonl` (and its sub-agent
+  folder, never overwriting, 0700) from the running agent's config dir to the next one, then
+  resumes only when the transcript is there; otherwise it starts a new session. `0058`, `0063`,
+  `0067`: context only.
+- Gates: full `test.sh` 7926/7926 on bentoo-lab; clippy clean on agent_sandbox, agent_ui,
+  settings_ui; `selftest.sh` 118/118 (from a checkout inside the hub: from /var/tmp the status.sh
+  and lab.sh cases fail for want of the hub, not of this change).
+
 ## [0.19.1_p20261121] — 2026-11-22
 
 Zeo `0.19.1_p20261121`: a fix to `0141`, on the same Zed `2f808b3c`.
