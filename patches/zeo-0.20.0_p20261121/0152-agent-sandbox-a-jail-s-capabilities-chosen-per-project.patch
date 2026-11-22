@@ -42,11 +42,16 @@ and neither does Plus while Zeo's copy is stopped (operator, 2026-11-22).
 0146's "outside the jail" filter applies to the remaining chosen ones, which
 keep their notice, now saying why Zeo could not hand them over. mcp_proxy_policy returns Only(<the project's list>), so zeo-lsp too
 reaches a jail only when chosen. An unchosen server is not handed over in any
-form. The thread says so once, when the session starts: one Info notice,
+form. The thread says so once: one Info notice,
 "N MCP servers are not enabled for this project's jail", naming the ones
 not chosen (zeo-lsp among them when the connection would have been offered
 it) and the secret-bearing ones skipped with their reason, and one log line
-with the counts. Its action, "Open Capabilities", is a `zeo/openSettingsAt`
+with the counts -- on the thread's first session start, and again only when
+the set or a reason changes (operator, 2026-11-22). What it last said is kept
+per thread in the key-value store (namespace agent_jail_not_enabled_shown,
+keyed by agent and session as thread_config_store keys a thread, the value
+the sorted name/reason lines), so a reopened, resumed or loaded thread says
+nothing new; a failed read shows it. Its action, "Open Capabilities", is a `zeo/openSettingsAt`
 entry in the notice's _meta that agent_ui's SessionNotice renders as a button
 dispatching OpenSettingsAt { path: "agent_sandbox#capabilities" }; the
 settings window takes `#<anchor>` off the path (pages::request_anchor), and
@@ -105,7 +110,9 @@ reset, a secret server skipped for an agent that cannot proxy and for a
 stopped copy (jail_servers_tests, mcp_over_acp_jail_tests), the one notice's
 count, text and action (jail_servers_tests, mcp_over_acp_jail_tests,
 session_notice_action_tests), the source label and the anchor
-(agent_jail_capabilities_tests).
+(agent_jail_capabilities_tests). Round 3: the notice once per thread, again
+for a changed set, its own for another thread (mcp_over_acp_jail_tests), and
+the record's order-free fingerprint (jail_servers_tests).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---
@@ -1203,10 +1210,10 @@ index e61b2df..0d7f9f2 100644
  
  fn all_mcp_configurations(
 diff --git a/crates/agent_servers/src/acp/jail_servers.rs b/crates/agent_servers/src/acp/jail_servers.rs
-index 6f5c810..0eafdb4 100644
+index 6f5c810..e4d7448 100644
 --- a/crates/agent_servers/src/acp/jail_servers.rs
 +++ b/crates/agent_servers/src/acp/jail_servers.rs
-@@ -8,21 +8,166 @@
+@@ -8,21 +8,177 @@
  //! left out, one notice in the thread names it and the path that hides it, and one log line
  //! records it. Leaving it out also keeps its arguments -- the figma extension passes its API key
  //! as one -- out of the jail.
@@ -1227,10 +1234,11 @@ index 6f5c810..0eafdb4 100644
 +use agent_sandbox::capabilities::secret_sites_of;
  use agent_sandbox::host_view::{hidden_server_path, jail_roots};
 -use agent_sandbox::launch::{LaunchId, LaunchRegistry};
+-use gpui::{App, Entity};
+-use project::context_server_store::ContextServerConfiguration;
 +use agent_sandbox::launch::{LaunchId, LaunchRegistry, settings_key_now};
 +use collections::HashSet;
- use gpui::{App, Entity};
--use project::context_server_store::ContextServerConfiguration;
++use gpui::{App, AppContext as _, Entity};
 +use project::Project;
 +use project::context_server_store::{ContextServerConfiguration, ContextServerStatus};
 +use settings::{Settings as _, SettingsStore};
@@ -1312,6 +1320,17 @@ index 6f5c810..0eafdb4 100644
 +    SecretNotRunning,
 +}
 +
++impl NotEnabled {
++    /// A stable name, for the per-thread record of what the notice said.
++    fn as_str(self) -> &'static str {
++        match self {
++            Self::NotChosen => "not_chosen",
++            Self::SecretAgentCannotProxy => "secret_agent_cannot_proxy",
++            Self::SecretNotRunning => "secret_not_running",
++        }
++    }
++}
++
 +/// What a jailed session gets and what it is told: the servers handed over, the chosen ones left
 +/// out because the jail cannot see their files, and the ones not enabled.
 +#[derive(Default)]
@@ -1378,7 +1397,7 @@ index 6f5c810..0eafdb4 100644
  }
  
  /// `configurations` without the stdio servers the jail cannot start, and those servers' names
-@@ -40,11 +185,7 @@ pub(crate) fn split_hidden(
+@@ -40,11 +196,7 @@ pub(crate) fn split_hidden(
      let mut kept = Vec::with_capacity(configurations.len());
      let mut hidden = Vec::new();
      for (name, configuration) in configurations {
@@ -1391,7 +1410,7 @@ index 6f5c810..0eafdb4 100644
              Some(path) => hidden.push((name, path)),
              None => kept.push((name, configuration)),
          }
-@@ -52,9 +193,73 @@ pub(crate) fn split_hidden(
+@@ -52,9 +204,124 @@ pub(crate) fn split_hidden(
      (kept, hidden)
  }
  
@@ -1461,14 +1480,65 @@ index 6f5c810..0eafdb4 100644
 +    )
 +}
 +
++/// The key-value namespace of what each thread's not-enabled notice last said (§6.64, round 3).
++const NOTICE_SHOWN_NAMESPACE: &str = "agent_jail_not_enabled_shown";
++
++/// What a not-enabled notice says, as a stable string: one sorted `name<TAB>reason` line per
++/// server, so the same set in another order is the same notice.
++pub(crate) fn not_enabled_fingerprint(not_enabled: &[(String, NotEnabled)]) -> String {
++    let mut lines: Vec<String> = not_enabled
++        .iter()
++        .map(|(name, reason)| format!("{name}\t{}", reason.as_str()))
++        .collect();
++    lines.sort();
++    lines.join("\n")
++}
++
++/// Whether `thread`'s not-enabled notice should be shown for `fingerprint`: once per thread, and
++/// again only when the set or a reason changes (operator, 2026-11-22). The record is keyed as
++/// `thread_config_store` keys a thread, by agent and session, so a reopened, resumed or loaded
++/// thread finds what it already said. The record is written here, in the background; a read
++/// error shows the notice (better twice than never).
++fn not_enabled_is_new(thread: &Entity<AcpThread>, fingerprint: &str, cx: &mut App) -> bool {
++    let (agent_id, session_id) = {
++        let thread = thread.read(cx);
++        (thread.connection().agent_id(), thread.session_id().clone())
++    };
++    let Ok(key) = crate::thread_config_store::key(&agent_id, &session_id) else {
++        return true;
++    };
++    let kvp = db::kvp::KeyValueStore::global(cx);
++    let store = kvp.scoped(NOTICE_SHOWN_NAMESPACE);
++    let last = store.read(&key).unwrap_or_else(|error| {
++        log::warn!("agent_sandbox event=notice_record_read_failed error={error:#}");
++        None
++    });
++    if last.as_deref() == Some(fingerprint) {
++        return false;
++    }
++    let fingerprint = fingerprint.to_string();
++    cx.background_spawn(async move {
++        if let Err(error) = kvp
++            .scoped(NOTICE_SHOWN_NAMESPACE)
++            .write(key, fingerprint)
++            .await
++        {
++            log::warn!("agent_sandbox event=notice_record_write_failed error={error:#}");
++        }
++    })
++    .detach();
++    true
++}
++
 +/// The thread's notices for a jailed session: one warning per chosen server the jail cannot see,
-+/// then one notice for the servers not enabled, with an action to the Capabilities.
++/// then one notice for the servers not enabled, with an action to the Capabilities -- shown on
++/// the thread's first session start and again only when what it says changes.
 +pub(crate) fn push_notices(thread: &Entity<AcpThread>, notices: &JailNotices, cx: &mut App) {
 +    for (name, path) in &notices.hidden {
          log::warn!(
              "agent_sandbox event=mcp_server_left_out server={} reason=outside_jail",
              crate::custom::log_token(name)
-@@ -64,12 +269,30 @@ pub(crate) fn push_notices(thread: &Entity<AcpThread>, hidden: &[(String, PathBu
+@@ -64,12 +331,35 @@ pub(crate) fn push_notices(thread: &Entity<AcpThread>, hidden: &[(String, PathBu
              format!("MCP server \"{name}\" is not available in the sandbox"),
          )
          .description(format!(
@@ -1481,6 +1551,11 @@ index 6f5c810..0eafdb4 100644
          ));
          thread.update(cx, |thread, cx| thread.push_notice(notice, cx));
      }
++    let fingerprint = not_enabled_fingerprint(&notices.not_enabled);
++    if !not_enabled_is_new(thread, &fingerprint, cx) {
++        log::debug!("agent_sandbox event=mcp_servers_not_enabled_already_shown");
++        return;
++    }
 +    if let Some(notice) = not_enabled_notice(&notices.not_enabled) {
 +        let count = |reason: NotEnabled| {
 +            notices
@@ -1502,7 +1577,7 @@ index 6f5c810..0eafdb4 100644
  
  #[cfg(test)]
 diff --git a/crates/agent_servers/src/acp/jail_servers_tests.rs b/crates/agent_servers/src/acp/jail_servers_tests.rs
-index a61a30f..6592004 100644
+index a61a30f..2798ea5 100644
 --- a/crates/agent_servers/src/acp/jail_servers_tests.rs
 +++ b/crates/agent_servers/src/acp/jail_servers_tests.rs
 @@ -7,7 +7,7 @@ use std::sync::Arc;
@@ -1514,7 +1589,7 @@ index a61a30f..6592004 100644
  
  fn stdio(path: &str, args: &[&str]) -> Arc<ContextServerConfiguration> {
      Arc::new(ContextServerConfiguration::Custom {
-@@ -83,3 +83,178 @@ fn jail_servers_leave_nothing_out_without_a_jail() {
+@@ -83,3 +83,199 @@ fn jail_servers_leave_nothing_out_without_a_jail() {
      assert_eq!(kept.len(), 1);
      assert!(hidden.is_empty());
  }
@@ -1693,6 +1768,27 @@ index a61a30f..6592004 100644
 +        "1 MCP server is not enabled for this project's jail"
 +    );
 +}
++
++// Round 3 (operator, 2026-11-22): the notice once per thread, again only when it would say
++// something else.
++
++#[test]
++fn jail_servers_fingerprint_ignores_order_and_sees_a_new_reason() {
++    let one = super::not_enabled_fingerprint(&[
++        ("b".to_string(), NotEnabled::NotChosen),
++        ("a".to_string(), NotEnabled::NotChosen),
++    ]);
++    let same = super::not_enabled_fingerprint(&[
++        ("a".to_string(), NotEnabled::NotChosen),
++        ("b".to_string(), NotEnabled::NotChosen),
++    ]);
++    assert_eq!(one, same);
++    let other_reason = super::not_enabled_fingerprint(&[
++        ("a".to_string(), NotEnabled::SecretAgentCannotProxy),
++        ("b".to_string(), NotEnabled::NotChosen),
++    ]);
++    assert_ne!(one, other_reason);
++}
 diff --git a/crates/agent_servers/src/acp/session_meta.rs b/crates/agent_servers/src/acp/session_meta.rs
 index d17869d..c5e9034 100644
 --- a/crates/agent_servers/src/acp/session_meta.rs
@@ -1858,7 +1954,7 @@ index 09df0c0..f36fc00 100644
          request.mcp_servers, expected_servers,
          "the project's MCP servers"
 diff --git a/crates/agent_servers/src/acp/v1/mcp_over_acp_jail_tests.rs b/crates/agent_servers/src/acp/v1/mcp_over_acp_jail_tests.rs
-index 0a390a1..2908cec 100644
+index 0a390a1..dd46e62 100644
 --- a/crates/agent_servers/src/acp/v1/mcp_over_acp_jail_tests.rs
 +++ b/crates/agent_servers/src/acp/v1/mcp_over_acp_jail_tests.rs
 @@ -1,5 +1,6 @@
@@ -1948,9 +2044,9 @@ index 0a390a1..2908cec 100644
 -        "the jail starts what it can see itself; nothing runs outside it for the jail: {servers:?}"
 +        servers.is_empty(),
 +        "nothing chosen, nothing handed over: {servers:?}"
-+    );
-+}
-+
+     );
+ }
+ 
 +#[gpui::test]
 +async fn mcp_over_acp_jail_a_chosen_server_is_proxied(cx: &mut gpui::TestAppContext) {
 +    let servers = servers_with(Reason::On, Some(vec![SERVER]), cx).await;
@@ -1958,9 +2054,9 @@ index 0a390a1..2908cec 100644
 +    assert!(
 +        matches!(&servers[..], [acp::McpServer::Acp(acp)] if acp.name == SERVER),
 +        "the chosen server reaches the jail from Zeo's copy: {servers:?}"
-     );
- }
- 
++    );
++}
++
 +/// Hostile: choosing another server does not open this one.
 +#[gpui::test]
 +async fn mcp_over_acp_jail_another_choice_leaves_the_server_out(cx: &mut gpui::TestAppContext) {
@@ -1972,7 +2068,7 @@ index 0a390a1..2908cec 100644
  #[gpui::test]
  async fn mcp_over_acp_jail_an_unjailed_launch_proxies_all(cx: &mut gpui::TestAppContext) {
      let servers = servers_for(Reason::Off, cx).await;
-@@ -56,3 +131,130 @@ async fn mcp_over_acp_jail_an_unjailed_launch_proxies_all(cx: &mut gpui::TestApp
+@@ -56,3 +131,192 @@ async fn mcp_over_acp_jail_an_unjailed_launch_proxies_all(cx: &mut gpui::TestApp
          "a launch record without a jail changes nothing: {servers:?}"
      );
  }
@@ -2101,6 +2197,68 @@ index 0a390a1..2908cec 100644
 +    assert_eq!(
 +        notice.title,
 +        "2 MCP servers are not enabled for this project's jail"
++    );
++}
++
++// Round 3 (operator, 2026-11-22): the not-enabled notice is shown on a thread's first session
++// start and again only when the set or a reason changes; reopening the thread does not repeat it.
++
++fn not_enabled_notices(thread: &Entity<AcpThread>, cx: &gpui::TestAppContext) -> usize {
++    thread.read_with(cx, |thread, _| {
++        thread
++            .notices()
++            .iter()
++            .filter(|(_, notice)| notice.title.contains("not enabled for this project's jail"))
++            .count()
++    })
++}
++
++#[gpui::test]
++async fn mcp_over_acp_jail_the_notice_shows_once_per_thread(cx: &mut gpui::TestAppContext) {
++    let (agent, launch) = jailed_agent(Reason::On, true, |_| {}, cx).await;
++    let new_thread = |cx: &mut gpui::TestAppContext| {
++        cx.update(|cx| {
++            agent.connection.clone().new_session(
++                agent.project.clone(),
++                PathList::new(&[std::path::Path::new("/a")]),
++                cx,
++            )
++        })
++    };
++    let thread = new_thread(cx).await.expect("session/new succeeds");
++    cx.run_until_parked();
++    assert_eq!(
++        not_enabled_notices(&thread, cx),
++        1,
++        "the first start says it"
++    );
++
++    // A reopen raises the session's notices again: the same set says nothing new.
++    let again =
++        cx.update(|cx| crate::acp::jail_hidden_servers(&agent.project, Some(launch), true, cx));
++    cx.update(|cx| crate::acp::jail_servers::push_notices(&thread, &again, cx));
++    cx.run_until_parked();
++    assert_eq!(not_enabled_notices(&thread, cx), 1, "not repeated");
++
++    // Another thread is told once too.
++    let other = new_thread(cx).await.expect("session/new succeeds");
++    cx.run_until_parked();
++    assert_eq!(not_enabled_notices(&other, cx), 1);
++
++    // What it would say changes: the thread is told again.
++    let changed = crate::acp::jail_servers::JailNotices {
++        hidden: Vec::new(),
++        not_enabled: vec![(
++            SERVER.to_string(),
++            crate::acp::jail_servers::NotEnabled::SecretAgentCannotProxy,
++        )],
++    };
++    cx.update(|cx| crate::acp::jail_servers::push_notices(&thread, &changed, cx));
++    cx.run_until_parked();
++    assert_eq!(
++        not_enabled_notices(&thread, cx),
++        2,
++        "a changed set is said again"
 +    );
 +}
 diff --git a/crates/agent_servers/src/acp/v2.rs b/crates/agent_servers/src/acp/v2.rs
