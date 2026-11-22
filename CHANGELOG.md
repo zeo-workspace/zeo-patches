@@ -31,6 +31,20 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+- **Added** `0141` (USE `ai-jail`, after `0057`, proposal §6.54): jail limits (`agent_sandbox.limits`,
+  defaults 8G / 400 % / 4096, `0` turns one off, a disk quota alone brings the task cap), a
+  `--state-root` per project (its own home, /tmp and Claude login), fail closed when ai-jail lacks
+  `--memory`. Needs `sys-apps/ai-jail-3.5.0-r1`. Stage 2 in the same patch: a Stop button (thaws,
+  then SIGTERM to the ai-jail process), a disk watchdog that freezes the jail's systemd scope past
+  `disk_quota` (Paused banner with Resume / Stop; paused jails are thawed when their launch ends
+  or Zeo quits), and on the Agent Sandbox page a Choose Folder… button, the four limits per
+  project and the state folder with its login command; the generated command shows
+  `--state-root` and the limits. Tests on bentoo-lab: 2290/2290 over agent_sandbox, settings_ui,
+  agent_ui, agent_servers; clippy clean; Red seen for stage 1; Xvfb proof in the hub's
+  `docs/assets/zeo-jail-limits-2026-11-22/`.
+- **Changed** `scripts/test.sh`: `agent_sandbox` joins `CRATES` (0057's tests had never run there).
+- **Changed** `.lab.toml`: the builder image for 0.18.0.
+
 ## [0.18.0_p20261121] — 2026-11-21
 
 Zeo `0.18.0_p20261121`: the series on Zed `2f808b3c`, `0002`'s getDiagnostics, step 4‴'s fixes. Minor,

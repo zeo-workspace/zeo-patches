@@ -718,6 +718,9 @@
 # devtools-bridge and before test; USE ai-jail is off by default, so the portable
 # builds skip it (@default: off). 0050/0051 apply on top of it, with or without it.
 0057-agent-sandbox-settings.patch
+# 0141: jail limits (memory, CPU, processes; a disk quota brings the task cap) and a
+# state root per project -- its own home, /tmp and Claude login (proposal §6.54).
+0141-agent-sandbox-jail-limits-and-a-state-root-per-project.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
