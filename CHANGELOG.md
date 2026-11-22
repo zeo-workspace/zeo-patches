@@ -31,6 +31,37 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.21.0_p20261121] — 2026-11-22
+
+Zeo `0.21.0_p20261121`: MCP over ACP (§6.69 step 3), §6.13's `zeo-lsp` and a jail's capabilities
+(§6.64 step 2) on the same Zed `2f808b3c`. Minor: `0148`–`0152` add settings and UI. The series is
+146. Gates on bentoo-lab: full `test.sh` 8131/8132 (job `20261122-214747-03747b`; the one failure was
+a wrong expectation in a new 0152 test, fixed), then agent_servers + agent_sandbox + settings_ui
+688/688 (`…220003-335cd7`) and, after round 3, agent_servers 367/367 (`…222414-9584b9`); clippy
+clean in the touched files; `verify.sh` 146/146.
+
+- **Added** `0148` (USE `claude-agent-acp-plus`, after `0147`): context_server's `request_raw` (the
+  result or the server's error object whole, cancel as `notifications/cancelled`) and
+  `InitializeResponse.instructions`.
+- **Added** `0149` (after `0148`): Zeo's MCP servers reach Claude Agent (Plus) over ACP. When the
+  agent advertises `mcpCapabilities.acp` (Plus >= 0.40.0), each running stdio/http server is declared
+  as `McpServer::Acp` and served through a new `mcp/message` handler; otherwise the entries stay as
+  before. Setting `agent.mcp_servers_over_acp` (default on) with its Settings UI row.
+- **Added** `0151` (after `0149`): `zeo-lsp`, five read-only language-server tools (diagnostics,
+  definition, references, hover, document symbols) answered by Zeo. Setting `agent.zeo_lsp` with its
+  row. Uses `open_buffer` + `register_buffer_with_language_servers`: `open_buffer_with_lsp` is
+  test-support only, which a release build caught.
+- **Added** `0150` (USE `ai-jail`, after `0146`): a jailed launch proxies no server by default.
+- **Added** `0152` (after `0150`): a jail's capabilities, per project over a global default
+  (`agent_sandbox.capabilities {mcp_servers, skills}`, `projects[<root>].capabilities`): only the chosen
+  MCP servers reach a jail (none by default, `zeo-lsp` included); a secret-bearing server asks before it
+  is turned on and is never handed over unproxied; the Capabilities block on the Agent Sandbox page;
+  a one-time-per-thread "not enabled" notice with Open Capabilities (`OpenSettingsAt
+  agent_sandbox#capabilities`).
+- `0002`, `0052`, `0057`, `0058`, `0063`, `0066`, `0067`, `0141`, `0146`: context only, regenerated.
+- **Changed** `scripts/test.sh`: `context_server` joins `CRATES`.
+- Xvfb proof: the hub's `docs/assets/zeo-lane-z021-2026-11-22/`.
+
 ## [0.20.0_p20261121] — 2026-11-22
 
 Zeo `0.20.0_p20261121`: step 4⁗ of the proposal (§6.62–§6.69) on the same Zed `2f808b3c`. Minor:
