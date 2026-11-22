@@ -31,6 +31,18 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.19.1_p20261121] — 2026-11-22
+
+Zeo `0.19.1_p20261121`: a fix to `0141`, on the same Zed `2f808b3c`.
+
+- **Fixed** `0141`: the login Zeo starts for a jailed agent runs on the host (the browser's OAuth
+  callback cannot reach the jail) without `CLAUDE_CONFIG_DIR`, so the token went to `~/.claude` and
+  the jailed agent kept answering "Authentication required" (operator, 2026-11-22, first project
+  on 0.19.0). The launch record keeps the jail's config dir (`LaunchRecord::claude_config_dir`)
+  and `agent_ui`'s new `agent_jail_login` points the login terminal at it. `0058`, `0063`, `0067`:
+  context only. Gates on bentoo-lab: 2293/2293 over agent_sandbox, settings_ui, agent_ui,
+  agent_servers; clippy clean.
+
 ## [0.19.0_p20261121] — 2026-11-21
 
 Zeo `0.19.0_p20261121`: proposal §6.54 on the same Zed `2f808b3c`. Minor: `0141` adds settings and
