@@ -704,8 +704,11 @@
 # ChevronUp, then FoldVertical); the minimized tasks card ends in Maximize (§6.67).
 0143-agent-ui-card-icons-say-the-state-and-the-tasks-pill-opens.patch
 # 0145: a row whose turn ended while a _claude/tasks task still runs shows the background
-# spinner, not Plus's Terminal fallback icon (§6.68).
+# spinner, and Claude Agent (Plus) has Claude's icon instead of the Terminal fallback (§6.68).
 0145-sidebar-a-running-task-after-the-turn-shows-the-background-spinner.patch
+# 0147: Zeo's skills (~/.agents/skills, <project>/.agents/skills) reach Plus as plugin
+# directories in session/new _meta.claudeCode.options.plugins (§6.69 step 2).
+0147-agent-servers-zeo-skills-reach-plus-as-plugins.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -734,9 +737,11 @@
 0141-agent-sandbox-jail-limits-and-a-state-root-per-project.patch
 # 0144: the limits as - / + steppers, sizes in their largest unit, one debounced write (§6.62).
 0144-settings-ui-the-jail-s-limits-are-steppers.patch
-# 0146: every jail masks the paths naming the machine and pins the CPUs its quota pays for;
-# agent_sandbox.mask_host passes --mask-host; claude.ai connectors off unless a project turns
-# them on; an MCP server the jail cannot start is left out with a notice (§6.63, §6.64).
+# 0146: every jail masks the paths naming the machine; a jail reserves disjoint cores on
+# request (limits.reserve_cpus, the thread's Reserve CPUs) or with agent_sandbox.mask_host,
+# which passes --mask-host; claude.ai connectors off unless a project turns them on; an MCP
+# server the jail cannot start is left out with a notice; Zeo's skills mapped read-only
+# (§6.63, §6.64, §6.69).
 0146-agent-sandbox-hide-the-host-pin-cpus-drop-unreachable-mcp-servers.patch
 
 # @feature: browser-extension

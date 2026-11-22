@@ -1,8 +1,8 @@
-From 94b17439074401e6a36d7dd46b7130cfa47192fe Mon Sep 17 00:00:00 2001
+From a63f8866c26b660c7d34869ae3f3ed263a802856 Mon Sep 17 00:00:00 2001
 From: zed-patches <zed-patches@localhost>
 Date: Sun, 22 Nov 2026 14:15:16 -0300
-Subject: [PATCH] agent_sandbox: a jail hides the machine's names, pins its
- CPUs and drops what it cannot run
+Subject: [PATCH] agent_sandbox: a jail hides the machine's names, reserves
+ cores on request and drops what it cannot run
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -14,16 +14,18 @@ Host masks (§6.63 step 1). ai-jail binds /etc and /sys read-only whole
 and masks hardware only under --lockdown, which Zeo cannot use (it makes
 the project read-only). A jailed agent read the real hostname (UTS already
 said ai-sandbox), /etc/fstab, /etc/machine-id, the boot command line (disk
-encryption names), the host's uptime, every network interface name and the
+encryption names), every network interface name and the
 board through DMI. Every jail now gets ai-jail's existing --mask on
-/etc/hostname, /etc/fstab, /etc/machine-id, /proc/cmdline, /proc/uptime,
-/sys/class/net, /sys/class/dmi and /sys/devices/virtual/dmi, for the paths
+/etc/hostname, /etc/fstab, /etc/machine-id, /proc/cmdline, /sys/class/net,
+/sys/class/dmi and /sys/devices/virtual/dmi, for the paths
 this machine has (ai-jail warns on a missing one and applies nothing).
 ai-jail 3.5.0's --mask makes a file empty and read-only and a folder an
 empty tmpfs, after every base mount, so the masks land on top of /proc and
 /sys. ai-jail's --mask-host (the fork, 2026-11-22) covers none of these, so
 Zeo's list carries them. Measured with the same binds (bubblewrap 0.13.0):
-ps, top and ls work; `uptime` fails, which is the point. A bind over a
+ps, top and ls work. /proc/uptime is not masked: `uptime` must work in a
+default jail (operator, 2026-11-22; masked it failed), and under mask_host
+ai-jail writes a synthetic one. A bind over a
 /proc file makes the kernel refuse nested procfs mounts, but nested
 sandboxes (bwrap, podman, Claude Code's Bash sandbox) already fail inside a
 default jail because of ai-jail's Landlock and seccomp (the ai-jail lane's
@@ -45,12 +47,26 @@ LaunchCause::MaskHostUnsupported). Zeo's disk watchdog finds the jail's
 scope through /proc/<pid>/cgroup read from outside the jail, which a cgroup
 namespace inside does not change (reasoned, not measured).
 
-CPU pin (§6.63 step 3). ai-jail's quota is time, so nproc (which reads
-the cgroup's cpu.max) said 4 while getconf, lscpu and every runtime asking
-sched_getaffinity said 32. A quota now brings --cpus with the last
-ceil(quota / 100) CPUs Zeo itself may use (from /proc/self/status), away
-from CPU 0, which takes most interrupts; none when the quota covers them
-all, or when the installed ai-jail has no --cpus.
+CPU reservation (§6.63 step 3, operator 2026-11-22). By default a jail has
+its quota alone: time, spread over every core. A jail reserves cores only
+when its project asks (agent_sandbox.limits.reserve_cpus, default false, also
+switched by the "Reserve CPUs" button beside the thread's lock, which writes
+the project's setting and restarts the agent) or when mask_host is on (its
+synthetic CPU files must match the cores the jail runs on). A reservation is
+ceil(quota / 100) cores, disjoint from every live reservation: the free
+cores Zeo may use (/proc/self/status), the last first, away from CPU 0. The
+allocator (cpu_reserve::reserve) is arithmetic over the online cores minus
+those reserved; the LaunchRegistry holds each launch's reservation and drops
+it when the launch ends. When too few cores are free the jail still pins,
+to the least-shared cores, and is told so: the lock's tooltip says "Shares
+CPUs <list> with another jail", the lock turns to warning, a "Shares CPUs"
+label sits beside it, and a log line records it. That is the smallest
+honest option: not pinning would silently give that one jail every core
+while the others keep theirs. Without --cpus in ai-jail --help nothing is
+pinned. Known gap: two starts planned at the same instant read the registry
+before either registers, and may overlap. The settings fingerprint now also
+covers mask_host, the connectors and the reservation, so a change to any of
+them marks a running agent as needing a restart.
 
 claude.ai connectors (§6.64, decided 2026-11-22). They reach their vendors
 through mcp-proxy.anthropic.com, so a jail that allows anthropic.com let
@@ -74,21 +90,38 @@ v1 and v2 keep it); host_view::jail_roots gives the folders the jail
 shows, hidden_server_path the first one a server needs outside them
 (`..` never counts as inside).
 
+Zeo's skills in the jail (§6.69 step 2, jail half; the plugin itself is
+0147): the plugin root (<data dir>/agent-skill-plugins) and ~/.agents/skills
+are mapped read-only at their own paths (JailInputs::ro_maps, skill_maps.rs)
+when they exist, so the plugin paths and their symlinks resolve inside. The
+launch makes the plugin root first: Zeo fills it at session/new, after the
+jail started (the Xvfb proof found the first jailed start without the map).
+The nested map under the jail's private home is not measured against a real
+ai-jail.
+
 The page's command preview lists every mask (rendering reads no file
-system). The rules live in a new module, host_view.rs.
+system). The rules live in new modules: host_view.rs, cpu_reserve.rs,
+skill_maps.rs.
 
 Tests:
 - agent_sandbox host_view::host_view_tests (new): the masks in every jail,
   the same masks plus --mask-host and no machine-id mask under mask_host,
-  a missing path skipped, the CPU list
-  (last N, rounded up, only allowed CPUs, none past them all), the kernel
-  list parser, and the hidden-path rule with the figma case, a flag
+  a missing path skipped, /proc/uptime never masked, the kernel list
+  parser, and the hidden-path rule with the figma case, a flag
   value, `..` and a shared prefix.
+- agent_sandbox cpu_reserve_tests (new): the last free cores, live
+  reservations disjoint, the least-used cores and `shared` when exhausted,
+  cores free again when a launch ends, no pin without a quota or for every
+  core.
 - agent_sandbox host_view_launch_tests (new, through a fake ai-jail): the
-  masks, --env ENABLE_CLAUDEAI_MCP_SERVERS and --cpus before `--`; a
+  masks and --env ENABLE_CLAUDEAI_MCP_SERVERS before `--` and no --cpus by
+  default; --cpus when the project reserves; two live reserving launches
+  disjoint, the first's cores free after it ends; a
   project keeping its connectors; mask_host refused without the option;
-  mask_host passed with every mask and without the machine-id mask; no
-  pin without --cpus.
+  mask_host passed with every mask, without the machine-id mask and pinned;
+  no pin without --cpus.
+- agent_sandbox skill_maps tests; agent_ui agent_jail_status::cpu_tests
+  (the lock names the reserved cores, warns when shared).
 - agent_servers acp::jail_servers::jail_servers_tests (new): an extension
   server left out, a project server and an http one kept; nothing left
   out without a jail.
@@ -100,13 +133,20 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---
 
 diff --git a/assets/settings/default.json b/assets/settings/default.json
-index 101c156..1bdbfbf 100644
+index 101c156..23af3b5 100644
 --- a/assets/settings/default.json
 +++ b/assets/settings/default.json
-@@ -3179,6 +3179,14 @@
+@@ -3177,8 +3177,19 @@
+       "max_tasks": 4096,
+       // Disk the jail's state and the project may grow by, such as "20G"; past it the
        // agent is paused. `null` measures nothing.
-       "disk_quota": null
-     },
+-      "disk_quota": null
+-    },
++      "disk_quota": null,
++      // Pin the jail to the cores its CPU quota pays for, none shared with another
++      // reserving jail while enough are free. Off, the quota alone limits it.
++      "reserve_cpus": false
++    },
 +    // Whether jailed projects get ai-jail's synthetic host view (--mask-host): the CPUs and
 +    // memory the limits allow, only the jail's own cgroup, a machine id of its own. It hides
 +    // hardware and cgroup details; nested sandboxes are unavailable in the jail either way.
@@ -119,18 +159,26 @@ index 101c156..1bdbfbf 100644
      // "/home/me/src/app": { "enabled": true, "rw_maps": [], "allow_hosts": [] }
      "projects": {},
 diff --git a/crates/agent_sandbox/src/agent_sandbox.rs b/crates/agent_sandbox/src/agent_sandbox.rs
-index 43c26c2..ccd3839 100644
+index 43c26c2..cfba4df 100644
 --- a/crates/agent_sandbox/src/agent_sandbox.rs
 +++ b/crates/agent_sandbox/src/agent_sandbox.rs
-@@ -9,6 +9,7 @@ pub mod command;
+@@ -8,12 +8,15 @@
+ pub mod command;
  pub mod confirm;
  pub mod control;
++pub mod cpu_reserve;
  pub mod disk_watch;
 +pub mod host_view;
  pub mod launch;
  pub mod memory;
  pub mod probe;
-@@ -42,6 +43,8 @@ mod command_tests;
+ mod project_keys;
+ mod settings;
++pub mod skill_maps;
+ pub mod validate;
+ 
+ pub use crate::launch::LaunchRegistry;
+@@ -42,6 +45,8 @@ mod command_tests;
  #[cfg(test)]
  mod confirm_tests;
  #[cfg(test)]
@@ -140,20 +188,33 @@ index 43c26c2..ccd3839 100644
  #[cfg(test)]
  mod limits_tests;
 diff --git a/crates/agent_sandbox/src/command.rs b/crates/agent_sandbox/src/command.rs
-index eae3015..fe18d98 100644
+index eae3015..d69a45e 100644
 --- a/crates/agent_sandbox/src/command.rs
 +++ b/crates/agent_sandbox/src/command.rs
-@@ -25,6 +25,9 @@ pub struct JailInputs<'a> {
+@@ -25,6 +25,12 @@ pub struct JailInputs<'a> {
      /// The resource-limit options (`SandboxLimits::jail_args`), already checked against what the
      /// installed ai-jail offers.
      pub limit_args: &'a [String],
 +    /// The options that hide the host (`host_view::host_args`, §6.63): `--mask` on the paths
 +    /// that name this machine, and `--mask-host` where the project asks for it.
 +    pub host_args: &'a [String],
++    /// Folders mapped read-only at their own paths besides `.git` and `.zed`: Zeo's skills
++    /// (`skill_maps`, §6.69 step 2).
++    pub ro_maps: &'a [PathBuf],
      /// Writable folders: defaults united with the project's entries, deduplicated, order kept.
      pub rw_maps: &'a [PathBuf],
      /// Hosts the jail may reach.
-@@ -67,6 +70,7 @@ pub fn generate(agent: AgentServerCommand, inputs: &JailInputs) -> AgentServerCo
+@@ -59,6 +65,9 @@ pub fn generate(agent: AgentServerCommand, inputs: &JailInputs) -> AgentServerCo
+         args.push("--map".into());
+         args.push(path_arg(&inputs.project_root.join(read_only)));
+     }
++    for read_only in inputs.ro_maps {
++        args.extend(["--map".into(), path_arg(read_only)]);
++    }
+     match inputs.state_root {
+         Some(root) => args.extend(["--state-root".into(), path_arg(root)]),
+         None => {
+@@ -67,6 +76,7 @@ pub fn generate(agent: AgentServerCommand, inputs: &JailInputs) -> AgentServerCo
          }
      }
      args.extend(inputs.limit_args.iter().cloned());
@@ -162,77 +223,313 @@ index eae3015..fe18d98 100644
          args.extend(["--rw-map".into(), path_arg(map)]);
      }
 diff --git a/crates/agent_sandbox/src/command_tests.rs b/crates/agent_sandbox/src/command_tests.rs
-index 3cff628..7d71743 100644
+index 3cff628..ef14433 100644
 --- a/crates/agent_sandbox/src/command_tests.rs
 +++ b/crates/agent_sandbox/src/command_tests.rs
-@@ -61,6 +61,7 @@ fn command_never_puts_env_values_on_argv() {
+@@ -61,6 +61,8 @@ fn command_never_puts_env_values_on_argv() {
          ("WEIRD", "--rw-map=/"),
      ]);
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
-@@ -111,6 +112,7 @@ fn command_keeps_agent_args_that_look_like_jail_flags_after_the_agent() {
+@@ -111,6 +113,8 @@ fn command_keeps_agent_args_that_look_like_jail_flags_after_the_agent() {
      let rw: [PathBuf; 0] = [];
      let hosts: [String; 0] = [];
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
-@@ -160,6 +162,7 @@ fn command_exact_argv_shape() {
+@@ -160,6 +164,8 @@ fn command_exact_argv_shape() {
      ];
      let agent_env = env(&[("A_NAME", "1"), ("B_NAME", "2")]);
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
-@@ -219,6 +222,7 @@ fn command_without_memory_ports_or_env_adds_neither() {
+@@ -219,6 +225,8 @@ fn command_without_memory_ports_or_env_adds_neither() {
      let rw: [PathBuf; 0] = [];
      let hosts = ["anthropic.com".to_string()];
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
-@@ -254,6 +258,7 @@ fn command_preview_round_trips_hostile_arguments() {
+@@ -254,6 +262,8 @@ fn command_preview_round_trips_hostile_arguments() {
      let rw = [PathBuf::from("/h/my cache")];
      let hosts: [String; 0] = [];
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
-@@ -285,6 +290,7 @@ fn command_keep_loopback_off_proxy_wraps_the_agent_once() {
+@@ -285,6 +295,8 @@ fn command_keep_loopback_off_proxy_wraps_the_agent_once() {
      let rw: [PathBuf; 0] = [];
      let hosts = ["anthropic.com".to_string()];
      let inputs = JailInputs {
 +        host_args: &[],
++        ro_maps: &[],
          state_root: None,
          limit_args: &[],
          ai_jail: Path::new("/usr/bin/ai-jail"),
+diff --git a/crates/agent_sandbox/src/confirm.rs b/crates/agent_sandbox/src/confirm.rs
+index c39d399..ba0a7ad 100644
+--- a/crates/agent_sandbox/src/confirm.rs
++++ b/crates/agent_sandbox/src/confirm.rs
+@@ -140,6 +140,53 @@ pub fn set_project_enabled(
+     })
+ }
+ 
++/// Sets the project's `agent_sandbox.projects[root].limits.reserve_cpus` (§6.63, the thread's
++/// "Reserve CPUs"). Resolves to `true` only when the file was saved; a restart applies it.
++pub fn set_project_reserve_cpus(root: &Path, reserve: bool, cx: &mut App) -> Task<bool> {
++    let Some(root_text) = root.to_str().map(str::to_string) else {
++        refuse_non_utf8_root(root, cx);
++        return Task::ready(false);
++    };
++    let root = root.to_path_buf();
++    cx.spawn(async move |cx| {
++        let keys: Vec<String> = cx.update(|cx| {
++            AgentSandboxSettings::get_global(cx)
++                .projects
++                .keys()
++                .cloned()
++                .collect()
++        });
++        let resolved = cx
++            .background_executor()
++            .spawn(async move {
++                resolve_project_key(keys.iter().map(String::as_str), &root).map(PathBuf::from)
++            })
++            .await;
++        let fallback = format!("agent_sandbox.projects[{root_text}].limits.reserve_cpus");
++        save(
++            cx,
++            move |content| {
++                let projects = content
++                    .agent_sandbox
++                    .get_or_insert_default()
++                    .projects
++                    .get_or_insert_default();
++                let key = target_project_key(projects.keys(), &root_text, resolved.as_deref());
++                let label = format!("agent_sandbox.projects[{key}].limits.reserve_cpus");
++                projects
++                    .entry(key)
++                    .or_default()
++                    .limits
++                    .get_or_insert_default()
++                    .reserve_cpus = Some(reserve);
++                label
++            },
++            fallback,
++        )
++        .await
++    })
++}
++
+ /// Sets `agent_sandbox.enabled`, the switch for projects without their own setting, asking first
+ /// when `enabled` is `false`. Resolves to `true` only when the file was saved.
+ pub fn set_default_enabled(enabled: bool, window: &mut Window, cx: &mut App) -> Task<bool> {
+diff --git a/crates/agent_sandbox/src/cpu_reserve.rs b/crates/agent_sandbox/src/cpu_reserve.rs
+new file mode 100644
+index 0000000..a60502d
+--- /dev/null
++++ b/crates/agent_sandbox/src/cpu_reserve.rs
+@@ -0,0 +1,84 @@
++//! CPU reservation for jails (Zeo proposal §6.63 step 3, operator decision 2026-11-22).
++//!
++//! By default a jail has its CPU quota alone: time, spread over every core, as before. A jail
++//! *reserves* cores only when its project asks (`agent_sandbox.limits.reserve_cpus`, also
++//! switched from the thread's lock) or when it gets ai-jail's synthetic host view
++//! (`mask_host`, whose CPU files must match the cores the jail can run on). A reservation is
++//! `ceil(quota / 100)` cores, disjoint from every other live reservation: the free cores Zeo
++//! may use, the last ones first, away from CPU 0, which takes most interrupts. When too few are
++//! free the jail still pins, to the least-shared cores, and the reservation says it is shared:
++//! the lock shows it, so the operator knows this jail competes with another for those cores.
++//! Reservations live in the `LaunchRegistry`, keyed by launch, and end with it.
++
++use std::collections::HashMap;
++
++/// The cores one jail is pinned to.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct CpuReservation {
++    /// Ascending.
++    pub cpus: Vec<u32>,
++    /// Some of them are another live jail's too: not enough cores were free.
++    pub shared: bool,
++}
++
++impl CpuReservation {
++    /// The cores as an ai-jail `--cpus` list: `28-31`, `4-6,9`.
++    pub fn list(&self) -> String {
++        format_cpu_list(&self.cpus)
++    }
++}
++
++/// How many cores a CPU quota pays for: `ceil(quota / 100)`; none without a quota.
++pub fn quota_cores(quota: Option<u32>) -> usize {
++    quota
++        .filter(|quota| *quota > 0)
++        .map_or(0, |quota| quota.div_ceil(100) as usize)
++}
++
++/// `count` of the `online` cores, avoiding `taken` (every live reservation's cores, a core once
++/// per jail holding it). `None` when nothing is asked, nothing is known, or `count` covers every
++/// core -- a pin to all of them changes nothing.
++pub fn reserve(count: usize, online: &[u32], taken: &[u32]) -> Option<CpuReservation> {
++    let mut cores = online.to_vec();
++    cores.sort_unstable();
++    cores.dedup();
++    if count == 0 || count >= cores.len() {
++        return None;
++    }
++    let mut uses: HashMap<u32, usize> = HashMap::new();
++    for core in taken {
++        *uses.entry(*core).or_default() += 1;
++    }
++    let use_of = |core: &u32| uses.get(core).copied().unwrap_or(0);
++    // Least used first; among equals, the highest-numbered first.
++    cores.sort_by(|a, b| use_of(a).cmp(&use_of(b)).then(b.cmp(a)));
++    let mut cpus: Vec<u32> = cores.into_iter().take(count).collect();
++    let shared = cpus.iter().any(|core| use_of(core) > 0);
++    cpus.sort_unstable();
++    Some(CpuReservation { cpus, shared })
++}
++
++/// `cpus`, sorted, as ranges: `[4, 5, 6, 9]` is `4-6,9`.
++pub fn format_cpu_list(cpus: &[u32]) -> String {
++    let mut parts = Vec::new();
++    let mut ix = 0;
++    while ix < cpus.len() {
++        let start = cpus[ix];
++        let mut end = start;
++        while ix + 1 < cpus.len() && cpus[ix + 1] == end + 1 {
++            ix += 1;
++            end = cpus[ix];
++        }
++        parts.push(if start == end {
++            start.to_string()
++        } else {
++            format!("{start}-{end}")
++        });
++        ix += 1;
++    }
++    parts.join(",")
++}
++
++#[cfg(test)]
++#[path = "cpu_reserve_tests.rs"]
++mod cpu_reserve_tests;
+diff --git a/crates/agent_sandbox/src/cpu_reserve_tests.rs b/crates/agent_sandbox/src/cpu_reserve_tests.rs
+new file mode 100644
+index 0000000..41a7b93
+--- /dev/null
++++ b/crates/agent_sandbox/src/cpu_reserve_tests.rs
+@@ -0,0 +1,74 @@
++// Zeo proposal §6.63 step 3 (operator, 2026-11-22): reserved cores are disjoint while enough are
++// free, shared -- and said so -- when they run out, and free again when a launch ends. Filter:
++// `cpu_reserve`.
++
++use super::*;
++
++fn host(n: u32) -> Vec<u32> {
++    (0..n).collect()
++}
++
++#[test]
++fn cpu_reserve_takes_the_last_free_cores() {
++    let first = reserve(4, &host(32), &[]).expect("a reservation");
++    assert_eq!(first.cpus, vec![28, 29, 30, 31]);
++    assert!(!first.shared);
++    assert_eq!(first.list(), "28-31");
++}
++
++#[test]
++fn cpu_reserve_keeps_live_reservations_disjoint() {
++    let mut taken = Vec::new();
++    let mut seen = Vec::new();
++    for _ in 0..4 {
++        let reservation = reserve(4, &host(16), &taken).expect("a reservation");
++        assert!(!reservation.shared, "{reservation:?} with {taken:?} taken");
++        for core in &reservation.cpus {
++            assert!(!seen.contains(core), "core {core} reserved twice");
++            seen.push(*core);
++        }
++        taken.extend(&reservation.cpus);
++    }
++    assert_eq!(seen.len(), 16);
++}
++
++/// Hostile: when cores run out the jail is told it shares, and gets the least-shared ones.
++#[test]
++fn cpu_reserve_shares_the_least_used_cores_when_exhausted() {
++    let taken: Vec<u32> = (0..8).chain(0..4).collect();
++    let reservation = reserve(4, &host(8), &taken).expect("a reservation");
++    assert!(reservation.shared);
++    assert_eq!(
++        reservation.cpus,
++        vec![4, 5, 6, 7],
++        "4-7 are held once, 0-3 twice"
++    );
++}
++
++#[test]
++fn cpu_reserve_frees_cores_when_a_launch_ends() {
++    let a = reserve(4, &host(8), &[]).expect("a");
++    let b = reserve(4, &host(8), &a.cpus).expect("b");
++    assert!(!b.shared);
++    // `a` ended: its cores are no longer taken, so the next jail gets them unshared.
++    let c = reserve(4, &host(8), &b.cpus).expect("c");
++    assert!(!c.shared);
++    assert_eq!(c.cpus, a.cpus);
++}
++
++#[test]
++fn cpu_reserve_pins_nothing_without_a_quota_or_for_every_core() {
++    assert_eq!(reserve(0, &host(8), &[]), None);
++    assert_eq!(reserve(8, &host(8), &[]), None, "all of them is no pin");
++    assert_eq!(reserve(4, &[], &[]), None, "unknown cores: no pin");
++    assert_eq!(quota_cores(None), 0);
++    assert_eq!(quota_cores(Some(0)), 0);
++    assert_eq!(quota_cores(Some(150)), 2, "rounded up");
++    assert_eq!(quota_cores(Some(400)), 4);
++}
++
++#[test]
++fn cpu_reserve_formats_ranges() {
++    assert_eq!(format_cpu_list(&[4, 5, 6, 9]), "4-6,9");
++    assert_eq!(format_cpu_list(&[31]), "31");
++}
 diff --git a/crates/agent_sandbox/src/host_view.rs b/crates/agent_sandbox/src/host_view.rs
 new file mode 100644
-index 0000000..6597ac9
+index 0000000..9716bbe
 --- /dev/null
 +++ b/crates/agent_sandbox/src/host_view.rs
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,172 @@
 +//! What a jail shows of the host (Zeo proposal §6.63, ask 86), the claude.ai connectors it lets
 +//! through (§6.64), and which of Zeo's MCP servers it can run (§6.64 step 1).
 +//!
 +//! ai-jail binds `/etc` and `/sys` read-only whole and masks hardware only under `--lockdown`,
 +//! which Zeo cannot use (it makes the project read-only too). So every jail gets ai-jail's own
 +//! `--mask` on the paths that name this machine or what it runs: its real hostname (UTS already
-+//! says `ai-sandbox`), its fstab, its boot command line (disk-encryption names), its uptime, its
-+//! network interface names, its board (DMI) and its machine id. ai-jail 3.5.0's `--mask` turns a
++//! says `ai-sandbox`), its fstab, its boot command line (disk-encryption names), its network
++//! interface names, its board (DMI) and its machine id. `/proc/uptime` is not masked: `uptime`
++//! must work in a default jail (operator, 2026-11-22); under `mask_host` ai-jail writes a
++//! synthetic one. ai-jail 3.5.0's `--mask` turns a
 +//! file into an empty read-only file and a folder into an empty tmpfs, after every base mount, so
 +//! the masks land on top of `/proc` and `/sys`; a path this machine lacks is left out (ai-jail
 +//! would only warn). ai-jail's `--mask-host` covers none of these.
 +//!
 +//! What it costs, measured 2026-11-22 (bubblewrap 0.13.0, the same binds): `ps`, `top` and `ls`
-+//! work; `uptime` fails ("Cannot get system uptime"), which is the point. A bind over a `/proc`
++//! work. A bind over a `/proc`
 +//! file also makes the kernel refuse a nested procfs mount (`mount_too_revealing`), but nested
 +//! sandboxes -- bwrap, podman, Claude Code's own Bash sandbox -- already fail inside a default
 +//! jail because of ai-jail's Landlock and seccomp (the ai-jail lane's finding, 2026-11-22), so
@@ -244,10 +541,9 @@ index 0000000..6597ac9
 +//! read from outside the jail, which a cgroup namespace inside does not change (reasoned, not
 +//! measured).
 +//!
-+//! The CPU quota is paired with `--cpus`: ai-jail's quota is time, so `nproc` (which reads the
-+//! cgroup's `cpu.max`) said 4 while `getconf`, `lscpu` and every runtime asking
-+//! `sched_getaffinity` said 32. Pinning `ceil(quota / 100)` CPUs makes them agree. The last CPUs
-+//! Zeo may use are taken, away from CPU 0, which takes most interrupts.
++//! The CPU quota alone is time, spread over every core: `nproc` (which reads the cgroup's
++//! `cpu.max`) says 4 while `getconf` and runtimes asking `sched_getaffinity` say 32. A jail that
++//! reserves cores (`cpu_reserve`) is pinned with `--cpus`, and then they all agree.
 +//!
 +//! This hides, it does not isolate: `cpuid`, timing, `uname(2)` and mount sources stay visible
 +//! short of a VM.
@@ -257,11 +553,10 @@ index 0000000..6597ac9
 +use crate::launch::{LaunchRecord, Reason};
 +
 +/// Masked in every jail: files become empty, folders an empty tmpfs.
-+pub const HOST_MASKS: [&str; 7] = [
++pub const HOST_MASKS: [&str; 6] = [
 +    "/etc/hostname",
 +    "/etc/fstab",
 +    "/proc/cmdline",
-+    "/proc/uptime",
 +    "/sys/class/net",
 +    "/sys/class/dmi",
 +    "/sys/devices/virtual/dmi",
@@ -296,45 +591,6 @@ index 0000000..6597ac9
 +        args.push(MASK_HOST_OPTION.to_string());
 +    }
 +    args
-+}
-+
-+/// The CPUs a quota of `quota` percent is pinned to: the last `ceil(quota / 100)` of `allowed`,
-+/// as an ai-jail `--cpus` list (`28-31`, `5,7`). `None` with no quota, or when the quota covers
-+/// every allowed CPU, where pinning changes nothing.
-+pub fn cpu_list(quota: Option<u32>, allowed: &[u32]) -> Option<String> {
-+    let quota = quota.filter(|quota| *quota > 0)?;
-+    let count = quota.div_ceil(100) as usize;
-+    if allowed.is_empty() || count >= allowed.len() {
-+        return None;
-+    }
-+    let mut cpus = allowed.to_vec();
-+    cpus.sort_unstable();
-+    cpus.dedup();
-+    if count >= cpus.len() {
-+        return None;
-+    }
-+    Some(format_cpu_list(&cpus[cpus.len() - count..]))
-+}
-+
-+/// `cpus`, sorted, as ranges: `[4, 5, 6, 9]` is `4-6,9`.
-+fn format_cpu_list(cpus: &[u32]) -> String {
-+    let mut parts = Vec::new();
-+    let mut ix = 0;
-+    while ix < cpus.len() {
-+        let start = cpus[ix];
-+        let mut end = start;
-+        while ix + 1 < cpus.len() && cpus[ix + 1] == end + 1 {
-+            ix += 1;
-+            end = cpus[ix];
-+        }
-+        parts.push(if start == end {
-+            start.to_string()
-+        } else {
-+            format!("{start}-{end}")
-+        });
-+        ix += 1;
-+    }
-+    parts.join(",")
 +}
 +
 +/// A kernel CPU list (`0-3,8,10-11`) as CPU numbers; an unreadable part is skipped.
@@ -432,10 +688,10 @@ index 0000000..6597ac9
 +mod host_view_tests;
 diff --git a/crates/agent_sandbox/src/host_view_launch_tests.rs b/crates/agent_sandbox/src/host_view_launch_tests.rs
 new file mode 100644
-index 0000000..b412e7a
+index 0000000..55366df
 --- /dev/null
 +++ b/crates/agent_sandbox/src/host_view_launch_tests.rs
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,236 @@
 +// Zeo proposal §6.63 steps 1 and 3, §6.64: what a jailed start passes ai-jail to hide the host,
 +// pin the CPUs and keep the claude.ai connectors out. Filter: `host_view_launch`.
 +
@@ -444,9 +700,8 @@ index 0000000..b412e7a
 +use gpui::TestAppContext;
 +use serde_json::{Value, json};
 +
-+use crate::host_view::{
-+    CONNECTORS_ENV, HOST_MASKS, MACHINE_ID, MASK_HOST_OPTION, allowed_cpus, cpu_list,
-+};
++use crate::cpu_reserve::{quota_cores, reserve};
++use crate::host_view::{CONNECTORS_ENV, HOST_MASKS, MACHINE_ID, MASK_HOST_OPTION, allowed_cpus};
 +use crate::launch_tests::*;
 +
 +/// The fork's 3.5.0-r1 options, plus `--cpus`; `mask_host` adds `--mask-host`.
@@ -477,7 +732,7 @@ index 0000000..b412e7a
 +}
 +
 +#[gpui::test]
-+async fn host_view_launch_masks_the_host_pins_cpus_and_drops_connectors(cx: &mut TestAppContext) {
++async fn host_view_launch_masks_the_host_and_drops_connectors(cx: &mut TestAppContext) {
 +    init(cx);
 +    let f = fixture("ai-jail 3.5.0");
 +    write_script(&f.ai_jail, &help(false));
@@ -506,18 +761,12 @@ index 0000000..b412e7a
 +        "the connectors' switch reaches the jail by name: {:?}",
 +        cmd.args
 +    );
-+    match cpu_list(Some(400), &allowed_cpus()) {
-+        Some(cpus) => assert!(
-+            before_separator(&cmd.args, "--cpus", &cpus),
-+            "{:?}",
-+            cmd.args
-+        ),
-+        None => assert!(
-+            !cmd.args.iter().any(|arg| arg == "--cpus"),
-+            "{:?}",
-+            cmd.args
-+        ),
-+    }
++    // Operator, 2026-11-22: the quota alone by default, no pin.
++    assert!(
++        !cmd.args.iter().any(|arg| arg == "--cpus"),
++        "{:?}",
++        cmd.args
++    );
 +}
 +
 +#[gpui::test]
@@ -577,9 +826,36 @@ index 0000000..b412e7a
 +        "--mask-host gives the jail its own machine id: {:?}",
 +        cmd.args
 +    );
++    assert_pinned(&cmd.args, "the host view reserves its cores");
 +}
 +
-+/// An ai-jail without `--cpus` gets no pin: the quota alone still caps the jail.
++/// The cores a 400 % quota reserves on this machine with no other reservation, when pinning
++/// changes anything here.
++fn assert_pinned(args: &[String], why: &str) {
++    match reserve(quota_cores(Some(400)), &allowed_cpus(), &[]) {
++        Some(reservation) => assert!(
++            before_separator(args, "--cpus", &reservation.list()),
++            "{why}: {args:?}"
++        ),
++        None => assert!(!args.iter().any(|arg| arg == "--cpus"), "{args:?}"),
++    }
++}
++
++#[gpui::test]
++async fn host_view_launch_reserves_cores_when_the_project_asks(cx: &mut TestAppContext) {
++    init(cx);
++    let f = fixture("ai-jail 3.5.0");
++    write_script(&f.ai_jail, &help(false));
++    set_user_settings(
++        settings(&f, json!({ "limits": { "reserve_cpus": true } })),
++        cx,
++    );
++    let project = project(&f, cx).await;
++    let (_, cmd) = jailed(run(&project, agent_cmd("/usr/bin/claude-agent-acp-plus"), cx).await);
++    assert_pinned(&cmd.args, "limits.reserve_cpus pins the jail");
++}
++
++/// An ai-jail without `--cpus` gets no pin even when asked: the quota alone still caps it.
 +#[gpui::test]
 +async fn host_view_launch_pins_nothing_without_the_option(cx: &mut TestAppContext) {
 +    init(cx);
@@ -588,7 +864,10 @@ index 0000000..b412e7a
 +        &f.ai_jail,
 +        "case \"$1\" in --help) printf '    --memory <SIZE>  Cap memory\\n    --state-root <DIR>  State on disk\\n' ;; *) echo 'ai-jail 3.5.0' ;; esac",
 +    );
-+    set_user_settings(settings(&f, Value::Null), cx);
++    set_user_settings(
++        settings(&f, json!({ "limits": { "reserve_cpus": true } })),
++        cx,
++    );
 +    let project = project(&f, cx).await;
 +    let (_, cmd) = jailed(run(&project, agent_cmd("/usr/bin/claude-agent-acp-plus"), cx).await);
 +    assert!(
@@ -597,12 +876,64 @@ index 0000000..b412e7a
 +        cmd.args
 +    );
 +}
++
++fn cpus_arg(args: &[String]) -> Option<String> {
++    args.windows(2)
++        .find(|pair| pair[0] == "--cpus")
++        .map(|pair| pair[1].clone())
++}
++
++/// Two live reserving jails get disjoint cores; when the first ends, its cores are free again.
++#[gpui::test]
++async fn host_view_launch_keeps_live_reservations_apart(cx: &mut TestAppContext) {
++    use crate::cpu_reserve::CpuReservation;
++    use crate::host_view::parse_cpu_list;
++
++    if allowed_cpus().len() < 9 {
++        // Two disjoint 4-core sets need 8 cores and a ninth left over to pin at all.
++        return;
++    }
++    init(cx);
++    let f = fixture("ai-jail 3.5.0");
++    write_script(&f.ai_jail, &help(false));
++    set_user_settings(
++        settings(&f, json!({ "limits": { "reserve_cpus": true } })),
++        cx,
++    );
++    let project = project(&f, cx).await;
++    let start = async |cx: &mut TestAppContext| {
++        let (record, cmd) =
++            jailed(run(&project, agent_cmd("/usr/bin/claude-agent-acp-plus"), cx).await);
++        let cpus = parse_cpu_list(&cpus_arg(&cmd.args).expect("pinned"));
++        let id = cx.update(|cx| crate::LaunchRegistry::register(record, cx));
++        cx.update(|cx| {
++            crate::LaunchRegistry::set_cpu_reservation(
++                id,
++                CpuReservation {
++                    cpus: cpus.clone(),
++                    shared: false,
++                },
++                cx,
++            )
++        });
++        (id, cpus)
++    };
++    let (first_id, first) = start(cx).await;
++    let (_, second) = start(cx).await;
++    assert!(
++        first.iter().all(|core| !second.contains(core)),
++        "{first:?} and {second:?} overlap"
++    );
++    cx.update(|cx| crate::LaunchRegistry::remove_launch(first_id, cx));
++    let (_, third) = start(cx).await;
++    assert_eq!(third, first, "the ended launch's cores are free again");
++}
 diff --git a/crates/agent_sandbox/src/host_view_tests.rs b/crates/agent_sandbox/src/host_view_tests.rs
 new file mode 100644
-index 0000000..a75170d
+index 0000000..63420da
 --- /dev/null
 +++ b/crates/agent_sandbox/src/host_view_tests.rs
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,127 @@
 +// Zeo proposal §6.63 steps 1 and 3, §6.64 step 1: what a jail shows of the host. Filter:
 +// `host_view`.
 +
@@ -622,7 +953,6 @@ index 0000000..a75170d
 +        "/etc/machine-id",
 +        "/etc/fstab",
 +        "/proc/cmdline",
-+        "/proc/uptime",
 +        "/sys/class/net",
 +        "/sys/class/dmi",
 +        "/sys/devices/virtual/dmi",
@@ -655,30 +985,13 @@ index 0000000..a75170d
 +    assert!(args.contains(&"/etc/hostname".to_string()));
 +}
 +
++/// `uptime` must work in a default jail (operator, 2026-11-22).
 +#[test]
-+fn host_view_pins_the_last_cpus_a_quota_pays_for() {
-+    let host: Vec<u32> = (0..32).collect();
-+    assert_eq!(cpu_list(Some(400), &host).as_deref(), Some("28-31"));
-+    assert_eq!(
-+        cpu_list(Some(150), &host).as_deref(),
-+        Some("30-31"),
-+        "rounded up"
-+    );
-+    assert_eq!(cpu_list(Some(100), &host).as_deref(), Some("31"));
-+    assert_eq!(
-+        cpu_list(Some(200), &[0, 2, 4, 6]).as_deref(),
-+        Some("4,6"),
-+        "only CPUs Zeo may use"
-+    );
-+}
-+
-+#[test]
-+fn host_view_pins_nothing_without_a_quota_or_past_every_cpu() {
-+    let host: Vec<u32> = (0..8).collect();
-+    assert_eq!(cpu_list(None, &host), None);
-+    assert_eq!(cpu_list(Some(0), &host), None, "0 turns the quota off");
-+    assert_eq!(cpu_list(Some(800), &host), None, "all of them is no pin");
-+    assert_eq!(cpu_list(Some(400), &[]), None, "unknown CPUs: no pin");
++fn host_view_leaves_uptime_alone() {
++    for mask_host in [false, true] {
++        let args = host_args(mask_host, all_exist);
++        assert!(!args.contains(&"/proc/uptime".to_string()), "{args:?}");
++    }
 +}
 +
 +#[test]
@@ -749,18 +1062,42 @@ index 0000000..a75170d
 +    assert!(hidden_server_path(Path::new("/usr/bin/node"), &args, &roots()).is_some());
 +}
 diff --git a/crates/agent_sandbox/src/launch.rs b/crates/agent_sandbox/src/launch.rs
-index 3612630..9e0f4b9 100644
+index 3612630..0fc711f 100644
 --- a/crates/agent_sandbox/src/launch.rs
 +++ b/crates/agent_sandbox/src/launch.rs
-@@ -22,6 +22,7 @@ use settings::Settings as _;
+@@ -5,7 +5,7 @@
+ //! A refusal never falls back to an unjailed start: while the sandbox is on for a project, every
+ //! Claude adapter of it starts through ai-jail or does not start (Q4).
+ 
+-use std::collections::HashSet;
++use std::collections::{HashMap, HashSet};
+ use std::ffi::OsStr;
+ use std::fmt;
+ use std::hash::{DefaultHasher, Hash as _, Hasher as _};
+@@ -22,10 +22,13 @@ use settings::Settings as _;
  use crate::command::{
      JailInputs, NO_PROXY_CARRIER, generate, keep_loopback_off_proxy, loopback_no_proxy,
  };
++use crate::cpu_reserve::{self, CpuReservation};
 +use crate::host_view;
  use crate::probe::{self, ProbeError};
  use crate::settings::{
      AgentMemorySettings, AgentSandboxSettings, ProjectPolicy, lexical_match, resolve_project_key,
-@@ -206,6 +207,8 @@ pub enum LaunchCause {
+ };
++use crate::skill_maps;
+ use crate::validate::{
+     self, ForbiddenRule, HostError, LimitError, ProtectedSet, RwMapError, expand_tilde,
+ };
+@@ -133,6 +136,8 @@ pub struct JailSpawn {
+     /// `HOME` and its own variables to find its configuration, so a login-shell environment
+     /// would leak into the jail and steer ai-jail.
+     pub env: Vec<(String, String)>,
++    /// The cores the jail reserves (§6.63), for the registry once the launch is registered.
++    pub cpu_reservation: Option<CpuReservation>,
+ }
+ 
+ /// A launch decision and, for a jailed start, how to spawn it.
+@@ -206,6 +211,8 @@ pub enum LaunchCause {
      /// A limit is set and the installed ai-jail has no `--memory` (Zeo next §6.54): the agent
      /// does not start rather than run unlimited.
      LimitsUnsupported,
@@ -769,7 +1106,7 @@ index 3612630..9e0f4b9 100644
      /// The project's state directory could not be created.
      StateRootCreate {
          dir: PathBuf,
-@@ -234,6 +237,7 @@ impl LaunchCause {
+@@ -234,6 +241,7 @@ impl LaunchCause {
              Self::ZedDirCreate { .. } => "zed_dir_create",
              Self::InvalidMemoryEndpoint(_) => "invalid_memory_endpoint",
              Self::LimitsUnsupported => "limits_unsupported",
@@ -777,7 +1114,7 @@ index 3612630..9e0f4b9 100644
              Self::StateRootCreate { .. } => "state_root_create",
          }
      }
-@@ -320,6 +324,10 @@ impl fmt::Display for LaunchCause {
+@@ -320,6 +328,10 @@ impl fmt::Display for LaunchCause {
                  f,
                  "Resource limits are set for this project, and the installed ai-jail cannot apply them (it has no --memory). Install sys-apps/ai-jail 3.5.0-r1 or later, or clear agent_sandbox.limits."
              ),
@@ -788,33 +1125,72 @@ index 3612630..9e0f4b9 100644
              Self::StateRootCreate { dir, error } => write!(
                  f,
                  "The project's jail state folder {} could not be created: {error}.",
-@@ -525,6 +533,8 @@ struct Checked {
+@@ -470,12 +482,13 @@ pub(crate) async fn plan_in(
+     env: LaunchEnv,
+     cx: &mut AsyncApp,
+ ) -> LaunchPlan {
+-    let (is_local, root, sandbox, memory) = cx.update(|cx| {
++    let (is_local, root, sandbox, memory, reserved_cpus) = cx.update(|cx| {
+         (
+             project.read(cx).is_local(),
+             project_root(project, cx),
+             AgentSandboxSettings::get_global(cx).clone(),
+             AgentMemorySettings::get_global(cx).clone(),
++            LaunchRegistry::reserved_cpus(cx),
+         )
+     });
+     let local = LocalLaunch {
+@@ -487,6 +500,7 @@ pub(crate) async fn plan_in(
+         memory,
+         env,
+         executor: cx.background_executor().clone(),
++        reserved_cpus,
+     };
+     if !is_local {
+         return LaunchPlan::without_spawn(LaunchDecision::Unchanged(
+@@ -512,6 +526,8 @@ struct LocalLaunch {
+     memory: AgentMemorySettings,
+     env: LaunchEnv,
+     executor: BackgroundExecutor,
++    /// Every live reservation's cores, a core once per jail holding it (§6.63, `cpu_reserve`).
++    reserved_cpus: Vec<u32>,
+ }
+ 
+ /// What the checks passed on to the generated command.
+@@ -525,6 +541,12 @@ struct Checked {
      state_root: Option<PathBuf>,
      /// The resource-limit options, checked against what ai-jail offers.
      limit_args: Vec<String>,
 +    /// The host masks for the paths this machine has (§6.63).
 +    host_args: Vec<String>,
++    /// Zeo's skills, mapped read-only (§6.69 step 2).
++    ro_maps: Vec<PathBuf>,
++    /// The cores this jail reserves, already in `limit_args` as `--cpus` (§6.63).
++    cpu_reservation: Option<CpuReservation>,
      rw_maps: Vec<PathBuf>,
      allow_hosts: Vec<String>,
      forward_ports: Vec<u16>,
-@@ -559,7 +569,10 @@ impl LocalLaunch {
+@@ -559,7 +581,12 @@ impl LocalLaunch {
                  .is_none_or(|path| !path.is_file());
              return LaunchPlan::without_spawn(LaunchDecision::Unchanged(record));
          }
 -        let checked = match self.check(&root, &policy).await {
 +        // Zeo §6.63 and §6.64: per project, as the switch and the limits are.
 +        let mask_host = self.sandbox.mask_host_for_key(key.as_deref());
++        // A synthetic host view must agree with the cores the jail runs on, so it reserves them.
++        let reserve_cpus = mask_host || self.sandbox.reserve_cpus_for_key(key.as_deref());
 +        let connectors = self.sandbox.claude_ai_connectors_for_key(key.as_deref());
-+        let checked = match self.check(&root, &policy, mask_host).await {
++        let checked = match self.check(&root, &policy, mask_host, reserve_cpus).await {
              Ok(checked) => checked,
              Err(refusal) => {
                  let (cause, version) = *refusal;
-@@ -569,8 +582,16 @@ impl LocalLaunch {
+@@ -569,8 +596,17 @@ impl LocalLaunch {
          let forwarded = matches!(checked.memory_port, MemoryPort::Forwarded(_));
          let jail_spawn = JailSpawn {
              cwd: checked.root.clone(),
 -            env: self.jail_env(&checked.env_names, forwarded),
 +            env: self.jail_env(&checked.env_names, forwarded, connectors),
++            cpu_reservation: checked.cpu_reservation.clone(),
          };
 +        let mut env_names = checked.env_names.clone();
 +        if !connectors
@@ -827,11 +1203,12 @@ index 3612630..9e0f4b9 100644
          // The record keeps the root as the project spells it: the registry and the UI look it
          // up by that spelling.
          let mut record = self.record(root, Reason::On, &policy, key);
-@@ -580,10 +601,11 @@ impl LocalLaunch {
+@@ -580,10 +616,12 @@ impl LocalLaunch {
              claude_dir: &checked.claude_dir,
              state_root: checked.state_root.as_deref(),
              limit_args: &checked.limit_args,
 +            host_args: &checked.host_args,
++            ro_maps: &checked.ro_maps,
              rw_maps: &checked.rw_maps,
              allow_hosts: &checked.allow_hosts,
              forward_ports: &checked.forward_ports,
@@ -840,7 +1217,7 @@ index 3612630..9e0f4b9 100644
          };
          let mut jailed = generate(self.cmd, &inputs);
          if forwarded {
-@@ -610,7 +632,16 @@ impl LocalLaunch {
+@@ -610,7 +648,16 @@ impl LocalLaunch {
      /// overrides the base (an npm adapter's `PATH`), except `HOME`: ai-jail finds its global
      /// configuration through it, so it is always Zeo's. With a forwarded memory port it also
      /// carries the loopback proxy exclusion, merged with the forwarded `no_proxy`/`NO_PROXY`.
@@ -858,7 +1235,7 @@ index 3612630..9e0f4b9 100644
          let mut env = std::collections::BTreeMap::new();
          for name in ["PATH", "LANG"] {
              if let Ok(value) = std::env::var(name) {
-@@ -634,6 +665,9 @@ impl LocalLaunch {
+@@ -634,6 +681,9 @@ impl LocalLaunch {
              let exclusion = loopback_no_proxy(configured);
              env.insert(NO_PROXY_CARRIER.to_string(), exclusion);
          }
@@ -868,15 +1245,16 @@ index 3612630..9e0f4b9 100644
          env.insert(
              "HOME".to_string(),
              self.env.home.to_string_lossy().into_owned(),
-@@ -646,6 +680,7 @@ impl LocalLaunch {
+@@ -646,6 +696,8 @@ impl LocalLaunch {
          &self,
          root: &Path,
          policy: &ProjectPolicy,
 +        mask_host: bool,
++        reserve_cpus: bool,
      ) -> Result<Checked, Box<(LaunchCause, Option<Version>)>> {
          let no_version = |cause| Box::new((cause, None));
          // One scan of the protected folders per launch: every check below shares it.
-@@ -674,7 +709,21 @@ impl LocalLaunch {
+@@ -674,7 +726,32 @@ impl LocalLaunch {
          if policy.limits.any() && !binary.supports_limits {
              return Err(refuse(LaunchCause::LimitsUnsupported));
          }
@@ -886,27 +1264,138 @@ index 3612630..9e0f4b9 100644
 +            return Err(refuse(LaunchCause::MaskHostUnsupported));
 +        }
 +        let mut limit_args = policy.limits.jail_args();
-+        // Zeo §6.63 step 3: the CPUs the quota pays for, so every tool counts the same.
-+        if binary.supports_cpus
-+            && let Some(cpus) = host_view::cpu_list(
-+                policy.limits.effective().cpu_quota,
++        // Zeo §6.63 step 3 (operator, 2026-11-22): the quota alone by default; a reserving jail
++        // is pinned to cores no other reserving jail holds, or told it shares them.
++        let cpu_reservation = if reserve_cpus && binary.supports_cpus {
++            cpu_reserve::reserve(
++                cpu_reserve::quota_cores(policy.limits.effective().cpu_quota),
 +                &host_view::allowed_cpus(),
++                &self.reserved_cpus,
 +            )
-+        {
-+            limit_args.extend(["--cpus".to_string(), cpus]);
++        } else {
++            None
++        };
++        if let Some(reservation) = &cpu_reservation {
++            if reservation.shared {
++                log::warn!(
++                    "agent_sandbox event=cpu_reservation_shared cpus={}",
++                    reservation.list()
++                );
++            }
++            limit_args.extend(["--cpus".to_string(), reservation.list()]);
 +        }
 +        let host_args = host_view::host_args(mask_host, Path::exists);
  
          // Zeo next §6.54: each project keeps its own home, /tmp and Claude config -- its own
          // login (operator, 2026-11-21) -- when ai-jail offers `--state-root`; otherwise the
-@@ -774,6 +823,7 @@ impl LocalLaunch {
+@@ -774,6 +851,20 @@ impl LocalLaunch {
              claude_dir,
              state_root,
              limit_args,
 +            host_args,
++            ro_maps: {
++                // Made now: Zeo writes the plugins into it at session/new, after the jail
++                // started, and a folder that did not exist at the start is not mapped.
++                let plugins = paths::data_dir().join(skill_maps::SKILL_PLUGINS_DIR);
++                if let Err(error) = std::fs::create_dir_all(&plugins) {
++                    log::warn!(
++                        "agent_sandbox event=skill_plugins_dir_failed error={:?}",
++                        error.to_string()
++                    );
++                }
++                skill_maps::skill_maps(&self.env.home, paths::data_dir(), Path::is_dir)
++            },
++            cpu_reservation,
              rw_maps,
              allow_hosts,
              forward_ports,
+@@ -822,7 +913,11 @@ impl LocalLaunch {
+             allow_hosts: Vec::new(),
+             forward_ports: Vec::new(),
+             memory_port: MemoryPort::Off,
+-            settings_fingerprint: settings_fingerprint(&self.sandbox, policy),
++            settings_fingerprint: settings_fingerprint(
++                &self.sandbox,
++                policy,
++                settings_key.as_deref(),
++            ),
+             memory_fingerprint: memory_fingerprint(&self.memory),
+             settings_key,
+             jail_pid: None,
+@@ -1051,8 +1146,16 @@ fn redact_endpoint(raw: &str) -> String {
+     format!("{scheme}{host}{path}")
+ }
+ 
+-fn settings_fingerprint(sandbox: &AgentSandboxSettings, policy: &ProjectPolicy) -> u64 {
++fn settings_fingerprint(
++    sandbox: &AgentSandboxSettings,
++    policy: &ProjectPolicy,
++    key: Option<&str>,
++) -> u64 {
+     let mut hasher = DefaultHasher::new();
++    // §6.63, §6.64: what a restart changes for this project beyond the policy.
++    sandbox.mask_host_for_key(key).hash(&mut hasher);
++    sandbox.claude_ai_connectors_for_key(key).hash(&mut hasher);
++    sandbox.reserve_cpus_for_key(key).hash(&mut hasher);
+     policy.enabled.hash(&mut hasher);
+     policy.rw_maps.hash(&mut hasher);
+     policy.allow_hosts.hash(&mut hasher);
+@@ -1121,7 +1224,7 @@ pub fn drifted(record: &LaunchRecord, settings: &AgentSandboxSettings) -> bool {
+         Reason::OwnCommand | Reason::Remote | Reason::NotClaude => false,
+         Reason::On | Reason::Off => {
+             let key = record_settings_key(record, settings);
+-            settings_fingerprint(settings, &settings.policy_for_key(key))
++            settings_fingerprint(settings, &settings.policy_for_key(key), key)
+                 != record.settings_fingerprint
+         }
+     }
+@@ -1188,6 +1291,8 @@ pub struct LaunchId(u64);
+ pub struct LaunchRegistry {
+     next_id: u64,
+     launches: Vec<(LaunchId, LaunchRecord)>,
++    /// The cores each live launch reserved (§6.63); removed with the launch.
++    cpu_reservations: HashMap<LaunchId, CpuReservation>,
+ }
+ 
+ impl Global for LaunchRegistry {}
+@@ -1279,9 +1384,37 @@ impl LaunchRegistry {
+                 thaw_if_paused(record);
+             }
+             registry.launches.retain(|(launch, _)| *launch != id);
++            registry.cpu_reservations.remove(&id);
++        }
++    }
++
++    /// Records the cores launch `id` reserved (§6.63), until it ends.
++    pub fn set_cpu_reservation(id: LaunchId, reservation: CpuReservation, cx: &mut App) {
++        if cx.has_global::<Self>() {
++            cx.global_mut::<Self>()
++                .cpu_reservations
++                .insert(id, reservation);
+         }
+     }
+ 
++    /// The cores launch `id` reserved, if it reserved any.
++    pub fn cpu_reservation(id: LaunchId, cx: &App) -> Option<CpuReservation> {
++        cx.try_global::<Self>()?.cpu_reservations.get(&id).cloned()
++    }
++
++    /// Every live reservation's cores, a core once per launch holding it.
++    pub fn reserved_cpus(cx: &App) -> Vec<u32> {
++        cx.try_global::<Self>()
++            .map(|registry| {
++                registry
++                    .cpu_reservations
++                    .values()
++                    .flat_map(|reservation| reservation.cpus.iter().copied())
++                    .collect()
++            })
++            .unwrap_or_default()
++    }
++
+     /// Thaws every paused jail. Run as Zeo quits: a frozen process never acts on the signal
+     /// that ends it, so a jail paused at exit would stay frozen, holding its memory, until
+     /// someone thawed its scope by hand (seen in the §6.54 Xvfb proof).
 diff --git a/crates/agent_sandbox/src/launch_tests.rs b/crates/agent_sandbox/src/launch_tests.rs
 index f7e6dde..f955b95 100644
 --- a/crates/agent_sandbox/src/launch_tests.rs
@@ -984,10 +1473,10 @@ index 76cb7e8..2a779f3 100644
      }
  }
 diff --git a/crates/agent_sandbox/src/settings.rs b/crates/agent_sandbox/src/settings.rs
-index 1d37cd4..7184abc 100644
+index 1d37cd4..a6741c2 100644
 --- a/crates/agent_sandbox/src/settings.rs
 +++ b/crates/agent_sandbox/src/settings.rs
-@@ -40,6 +40,10 @@ pub struct AgentSandboxSettings {
+@@ -40,6 +40,12 @@ pub struct AgentSandboxSettings {
      pub state_root: String,
      /// Limits for every jailed project (§6.54).
      pub limits: SandboxLimits,
@@ -995,10 +1484,12 @@ index 1d37cd4..7184abc 100644
 +    pub mask_host: bool,
 +    /// The account's claude.ai connectors in every jailed project (§6.64). Default: `false`.
 +    pub claude_ai_connectors: bool,
++    /// `limits.reserve_cpus` for every jailed project (§6.63). Default: `false`.
++    pub reserve_cpus: bool,
      /// Per-project overrides, keyed by the absolute root path as written.
      pub projects: BTreeMap<String, AgentSandboxProjectSettings>,
  }
-@@ -125,6 +129,10 @@ pub struct AgentSandboxProjectSettings {
+@@ -125,6 +131,12 @@ pub struct AgentSandboxProjectSettings {
      pub allow_hosts: Vec<String>,
      /// Limits replacing the defaults they name.
      pub limits: SandboxLimits,
@@ -1006,10 +1497,12 @@ index 1d37cd4..7184abc 100644
 +    pub mask_host: Option<bool>,
 +    /// `None` follows `agent_sandbox.claude_ai_connectors`.
 +    pub claude_ai_connectors: Option<bool>,
++    /// The project's `limits.reserve_cpus`; `None` follows the default.
++    pub reserve_cpus: Option<bool>,
  }
  
  /// The defaults merged with one project's entry, unvalidated.
-@@ -166,6 +174,20 @@ impl AgentSandboxSettings {
+@@ -166,6 +178,27 @@ impl AgentSandboxSettings {
          }
      }
  
@@ -1018,6 +1511,13 @@ index 1d37cd4..7184abc 100644
 +        key.and_then(|key| self.projects.get(key))
 +            .and_then(|entry| entry.mask_host)
 +            .unwrap_or(self.mask_host)
++    }
++
++    /// Whether the project under `key` reserves its cores (§6.63, `limits.reserve_cpus`).
++    pub fn reserve_cpus_for_key(&self, key: Option<&str>) -> bool {
++        key.and_then(|key| self.projects.get(key))
++            .and_then(|entry| entry.reserve_cpus)
++            .unwrap_or(self.reserve_cpus)
 +    }
 +
 +    /// Whether the project under `key` loads the account's claude.ai connectors (§6.64).
@@ -1030,7 +1530,19 @@ index 1d37cd4..7184abc 100644
      /// Whether the project rooted at `root` runs its agent jailed, keyed as [`Self::project_policy`].
      pub fn effective_enabled(&self, root: &Path) -> bool {
          lexical_match(self.project_keys(), root)
-@@ -269,6 +291,8 @@ impl Settings for AgentSandboxSettings {
+@@ -260,6 +293,11 @@ impl Settings for AgentSandboxSettings {
+             state_root: sandbox
+                 .state_root
+                 .unwrap_or_else(|| DEFAULT_STATE_ROOT.to_string()),
++            reserve_cpus: sandbox
++                .limits
++                .as_ref()
++                .and_then(|limits| limits.reserve_cpus)
++                .unwrap_or(false),
+             limits: {
+                 let limits = sandbox.limits.unwrap_or_default();
+                 SandboxLimits {
+@@ -269,6 +307,8 @@ impl Settings for AgentSandboxSettings {
                      disk_quota: limits.disk_quota,
                  }
              },
@@ -1039,24 +1551,101 @@ index 1d37cd4..7184abc 100644
              projects: sandbox
                  .projects
                  .unwrap_or_default()
-@@ -287,6 +311,8 @@ impl Settings for AgentSandboxSettings {
-                                 disk_quota: limits.disk_quota,
+@@ -280,13 +320,20 @@ impl Settings for AgentSandboxSettings {
+                         allow_hosts: project.allow_hosts.unwrap_or_default(),
+                         limits: project
+                             .limits
++                            .as_ref()
+                             .map(|limits| SandboxLimits {
+-                                memory: limits.memory,
++                                memory: limits.memory.clone(),
+                                 cpu_quota: limits.cpu_quota,
+                                 max_tasks: limits.max_tasks,
+-                                disk_quota: limits.disk_quota,
++                                disk_quota: limits.disk_quota.clone(),
                              })
                              .unwrap_or_default(),
 +                        mask_host: project.mask_host,
 +                        claude_ai_connectors: project.claude_ai_connectors,
++                        reserve_cpus: project
++                            .limits
++                            .as_ref()
++                            .and_then(|limits| limits.reserve_cpus),
                      };
                      (root, project)
                  })
+diff --git a/crates/agent_sandbox/src/skill_maps.rs b/crates/agent_sandbox/src/skill_maps.rs
+new file mode 100644
+index 0000000..1036d3c
+--- /dev/null
++++ b/crates/agent_sandbox/src/skill_maps.rs
+@@ -0,0 +1,56 @@
++//! Zeo's skills inside the jail (Zeo proposal §6.69 step 2, 2026-11-22).
++//!
++//! Zeo hands Claude Agent (Plus) its skills as plugin directories under its data dir, each a
++//! `skills` symlink to `~/.agents/skills` or to a project's `.agents/skills`
++//! (`agent_servers::zeo_skills_plugin`). A jailed agent sees the project, but neither Zeo's data
++//! dir nor the real home: both folders are mapped read-only, at their own paths, so the plugin
++//! paths and the symlinks resolve inside as outside. Only folders that exist are mapped; the
++//! launch makes the plugin root first, since Zeo fills it at session/new, after the jail starts
++//! (the round-2 Xvfb proof found the first jailed start without the map).
++
++use std::path::{Path, PathBuf};
++
++/// The folder under Zeo's data dir holding the plugin directories; the same name as
++/// `agent_servers::zeo_skills_plugin::SKILL_PLUGINS_DIR`, which this crate cannot depend on.
++pub const SKILL_PLUGINS_DIR: &str = "agent-skill-plugins";
++
++/// The read-only maps a jail needs for Zeo's skills: the plugin root and `~/.agents/skills`,
++/// those of them that are folders (`is_dir` is the file-system check, a parameter for tests).
++pub fn skill_maps(home: &Path, data_dir: &Path, is_dir: impl Fn(&Path) -> bool) -> Vec<PathBuf> {
++    [
++        data_dir.join(SKILL_PLUGINS_DIR),
++        home.join(".agents/skills"),
++    ]
++    .into_iter()
++    .filter(|path| is_dir(path))
++    .collect()
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn skill_maps_name_the_plugin_root_and_the_users_skills() {
++        let maps = skill_maps(
++            Path::new("/h/u"),
++            Path::new("/h/u/.local/share/zeo"),
++            |_| true,
++        );
++        assert_eq!(
++            maps,
++            vec![
++                PathBuf::from("/h/u/.local/share/zeo/agent-skill-plugins"),
++                PathBuf::from("/h/u/.agents/skills"),
++            ]
++        );
++    }
++
++    #[test]
++    fn skill_maps_leave_out_what_is_not_there() {
++        let maps = skill_maps(Path::new("/h/u"), Path::new("/d"), |path| {
++            path == Path::new("/h/u/.agents/skills")
++        });
++        assert_eq!(maps, vec![PathBuf::from("/h/u/.agents/skills")]);
++    }
++}
 diff --git a/crates/agent_sandbox/tests/real_ai_jail.rs b/crates/agent_sandbox/tests/real_ai_jail.rs
-index 6df1746..8b95ba4 100644
+index 6df1746..4a7bac8 100644
 --- a/crates/agent_sandbox/tests/real_ai_jail.rs
 +++ b/crates/agent_sandbox/tests/real_ai_jail.rs
-@@ -130,6 +130,7 @@ fn jailed(
+@@ -130,6 +130,8 @@ fn jailed(
      let mut cmd = generate(
          agent,
          &JailInputs {
 +            host_args: &[],
++            ro_maps: &[],
              state_root: None,
              limit_args: &[],
              ai_jail: bin,
@@ -1302,7 +1891,7 @@ index 0000000..a61a30f
 +    assert!(hidden.is_empty());
 +}
 diff --git a/crates/agent_servers/src/acp/v1.rs b/crates/agent_servers/src/acp/v1.rs
-index 447da6a..d33ec2e 100644
+index 69687d8..ca756b7 100644
 --- a/crates/agent_servers/src/acp/v1.rs
 +++ b/crates/agent_servers/src/acp/v1.rs
 @@ -377,6 +377,8 @@ pub struct AcpConnection {
@@ -1398,7 +1987,7 @@ index 447da6a..d33ec2e 100644
 -        let mcp_servers = mcp_servers_for_project(&project, cx);
 +        let mcp_servers = mcp_servers_for_project(&project, self.launch_id, cx);
          let sends_initial_config_options = self.agent_supports_initial_config_options(cx);
-         let session_meta = super::session_meta::session_request_meta(cx);
+         let session_meta = super::session_meta::new_session_meta(&self.id, &project, cx);
  
 @@ -2631,7 +2645,7 @@ impl AgentConnection for AcpConnection {
              ))));
@@ -1406,7 +1995,7 @@ index 447da6a..d33ec2e 100644
  
 -        let mcp_servers = mcp_servers_for_project(&project, cx);
 +        let mcp_servers = mcp_servers_for_project(&project, self.launch_id, cx);
-         let session_meta = super::session_meta::session_request_meta(cx);
+         let session_meta = super::session_meta::new_session_meta(&self.id, &project, cx);
          self.open_or_create_session(
              session_id,
 @@ -2678,7 +2692,7 @@ impl AgentConnection for AcpConnection {
@@ -1415,7 +2004,7 @@ index 447da6a..d33ec2e 100644
  
 -        let mcp_servers = mcp_servers_for_project(&project, cx);
 +        let mcp_servers = mcp_servers_for_project(&project, self.launch_id, cx);
-         let session_meta = super::session_meta::session_request_meta(cx);
+         let session_meta = super::session_meta::new_session_meta(&self.id, &project, cx);
          self.open_or_create_session(
              session_id,
 @@ -11430,8 +11444,12 @@ exit 7
@@ -1447,7 +2036,7 @@ index b4ff2d9..d5be3e8 100644
          request.mcp_servers, expected_servers,
          "the project's MCP servers"
 diff --git a/crates/agent_servers/src/acp/v2.rs b/crates/agent_servers/src/acp/v2.rs
-index d45be0a..a5b3ea2 100644
+index 9a21006..76ed051 100644
 --- a/crates/agent_servers/src/acp/v2.rs
 +++ b/crates/agent_servers/src/acp/v2.rs
 @@ -209,6 +209,8 @@ pub struct AcpV2Connection {
@@ -1512,7 +2101,7 @@ index d45be0a..a5b3ea2 100644
              &work_dirs,
              |path| path_style.is_absolute(path),
          ) {
-@@ -1424,7 +1432,7 @@ impl AgentConnection for AcpV2Connection {
+@@ -1426,7 +1434,7 @@ impl AgentConnection for AcpV2Connection {
      ) -> Task<Result<Entity<AcpThread>>> {
          let path_style = project.read(cx).path_style(cx);
          let context = match self.session_context(
@@ -1522,10 +2111,51 @@ index d45be0a..a5b3ea2 100644
              |path| path_style.is_absolute(path),
          ) {
 diff --git a/crates/agent_servers/src/custom.rs b/crates/agent_servers/src/custom.rs
-index d00efe2..4356bf4 100644
+index 2cc6fe5..587b2c9 100644
 --- a/crates/agent_servers/src/custom.rs
 +++ b/crates/agent_servers/src/custom.rs
-@@ -346,6 +346,7 @@ impl AgentServer for CustomAgentServer {
+@@ -313,15 +313,21 @@ impl AgentServer for CustomAgentServer {
+                 cx,
+             )
+             .await;
+-            let (record, command, cwd, jailed) = match plan.decision {
++            let (record, command, cwd, jailed, cpu_reservation) = match plan.decision {
+                 LaunchDecision::Jailed(record, mut jailed_command) => {
+                     let Some(spawn) = plan.jail_spawn else {
+                         anyhow::bail!("agent sandbox: a jailed start came without its spawn plan");
+                     };
+                     jailed_command.env = Some(spawn.env.into_iter().collect());
+-                    (record, jailed_command, Some(spawn.cwd), true)
++                    (
++                        record,
++                        jailed_command,
++                        Some(spawn.cwd),
++                        true,
++                        spawn.cpu_reservation,
++                    )
+                 }
+-                LaunchDecision::Unchanged(record) => (record, command, None, false),
++                LaunchDecision::Unchanged(record) => (record, command, None, false, None),
+                 LaunchDecision::Refused(error) => {
+                     log_refusal(&error);
+                     // No context: the thread shows `to_string()`, the outermost layer only, and
+@@ -330,7 +336,14 @@ impl AgentServer for CustomAgentServer {
+                 }
+             };
+             log_launch(&record, jailed);
+-            let launch_id = cx.update(|cx| LaunchRegistry::register(record, cx));
++            let launch_id = cx.update(|cx| {
++                let launch_id = LaunchRegistry::register(record, cx);
++                // Zeo §6.63: held until the launch ends, so the next jail reserves around it.
++                if let Some(reservation) = cpu_reservation {
++                    LaunchRegistry::set_cpu_reservation(launch_id, reservation, cx);
++                }
++                launch_id
++            });
+             // Zeo next §6.54: the process the connection spawns, for the kill switch and the
+             // disk watchdog; filled in by the spawn, read once the connection stands.
+             let jail_pid =
+@@ -357,6 +370,7 @@ impl AgentServer for CustomAgentServer {
                      cwd,
                      io_ended: Some(io_ended),
                      jail_pid: jail_pid.clone(),
@@ -1568,8 +2198,240 @@ index dc37db3..88515ad 100644
  ];
  
  struct JailFixture {
+diff --git a/crates/agent_ui/src/agent_jail_status.rs b/crates/agent_ui/src/agent_jail_status.rs
+index 850e12e..f7cc112 100644
+--- a/crates/agent_ui/src/agent_jail_status.rs
++++ b/crates/agent_ui/src/agent_jail_status.rs
+@@ -2,6 +2,7 @@
+ //! the `LaunchRegistry` record of its (agent, root), drawn where Zed draws its native sandbox
+ //! icon.
+ 
++use agent_sandbox::cpu_reserve::CpuReservation;
+ use agent_sandbox::launch::{self, LaunchRecord, MemoryPort, Reason};
+ use agent_sandbox::probe;
+ use gpui::{AnyElement, App, SharedString, Window};
+@@ -71,6 +72,73 @@ impl JailStatusSummary {
+     }
+ }
+ 
++impl JailStatusSummary {
++    /// The cores the jail reserved (§6.63), and a warning when it shares them: too few cores
++    /// were free when it started, so it competes with another reserving jail.
++    pub fn with_cpu_reservation(mut self, reservation: Option<&CpuReservation>) -> Self {
++        let Some(reservation) = reservation else {
++            return self;
++        };
++        if reservation.shared {
++            self.lines.push(cpu_shared_line(reservation).into());
++            self.color = Color::Warning;
++        } else {
++            self.lines
++                .push(format!("Reserved CPUs: {}", reservation.list()).into());
++        }
++        self
++    }
++}
++
++/// The warning a jail that shares its reserved cores shows.
++pub fn cpu_shared_line(reservation: &CpuReservation) -> String {
++    format!(
++        "Shares CPUs {} with another jail: too few cores were free when it started.",
++        reservation.list()
++    )
++}
++
++/// The label beside the lock of a jail whose reserved cores are shared (§6.63).
++pub const CPU_SHARED_LABEL: &str = "Shares CPUs";
++
++/// The thread's "Reserve CPUs" switch beside the lock (§6.63, operator 2026-11-22): pins the
++/// project's jail to cores of its own, or lets the quota alone limit it. A click writes the
++/// project's `limits.reserve_cpus` and restarts the agent, which applies it.
++pub fn render_cpu_reservation_toggle(
++    reserving: bool,
++    shared: bool,
++    on_toggle: Box<dyn Fn(&mut Window, &mut App)>,
++) -> AnyElement {
++    let (icon, tooltip) = if reserving {
++        (
++            IconName::Unpin,
++            "Stop Reserving CPUs: the quota alone limits this jail (restarts the agent)",
++        )
++    } else {
++        (
++            IconName::Pin,
++            "Reserve CPUs: pin this jail to cores no other reserving jail uses (restarts the agent)",
++        )
++    };
++    h_flex()
++        .gap_1()
++        .when(shared, |this| {
++            this.child(
++                Label::new(CPU_SHARED_LABEL)
++                    .size(LabelSize::Small)
++                    .color(Color::Warning),
++            )
++        })
++        .child(
++            IconButton::new("agent-jail-reserve-cpus", icon)
++                .icon_size(IconSize::Small)
++                .icon_color(if shared { Color::Warning } else { Color::Muted })
++                .tooltip(Tooltip::text(tooltip))
++                .on_click(move |_, window, cx| on_toggle(window, cx)),
++        )
++        .into_any_element()
++}
++
+ /// The icon's presentation for `record`; `drifted` is whether the settings of now differ from
+ /// those the agent was started with (R5.4).
+ /// The tooltip of a disabled lock: the sandbox needs ai-jail (operator, 2026-11-22).
+@@ -267,3 +335,7 @@ pub fn render_jail_paused(
+ #[cfg(test)]
+ #[path = "agent_jail_status_pending_tests.rs"]
+ mod pending_tests;
++
++#[cfg(test)]
++#[path = "agent_jail_status_cpu_tests.rs"]
++mod cpu_tests;
+diff --git a/crates/agent_ui/src/agent_jail_status_cpu_tests.rs b/crates/agent_ui/src/agent_jail_status_cpu_tests.rs
+new file mode 100644
+index 0000000..324eecf
+--- /dev/null
++++ b/crates/agent_ui/src/agent_jail_status_cpu_tests.rs
+@@ -0,0 +1,74 @@
++// Zeo proposal §6.63 (operator, 2026-11-22): the lock says which cores a jail reserved, and
++// warns when it shares them. Filter: `cpu_tests`.
++use std::path::PathBuf;
++
++use agent_sandbox::cpu_reserve::CpuReservation;
++use agent_sandbox::launch::{LaunchRecord, MemoryPort, Reason};
++use project::agent_server_store::AgentId;
++use ui::Color;
++
++use super::*;
++
++fn jailed() -> LaunchRecord {
++    LaunchRecord {
++        agent_id: AgentId::new("Test"),
++        project_root: PathBuf::from("/w/app"),
++        reason: Reason::On,
++        ai_jail_version: Some(semver::Version::parse("3.5.0").expect("version")),
++        ai_jail_path: None,
++        rw_maps: Vec::new(),
++        allow_hosts: Vec::new(),
++        forward_ports: Vec::new(),
++        memory_port: MemoryPort::Off,
++        settings_fingerprint: 0,
++        memory_fingerprint: 0,
++        settings_key: None,
++        jail_pid: None,
++        paused: false,
++        claude_config_dir: None,
++        ai_jail_missing: false,
++    }
++}
++
++#[test]
++fn the_lock_names_the_reserved_cores() {
++    let summary =
++        jail_status_summary(&jailed(), false).with_cpu_reservation(Some(&CpuReservation {
++            cpus: vec![28, 29, 30, 31],
++            shared: false,
++        }));
++    assert!(
++        summary
++            .lines
++            .iter()
++            .any(|line| line.as_ref() == "Reserved CPUs: 28-31"),
++        "{:?}",
++        summary.lines
++    );
++    assert_eq!(summary.color, Color::Default);
++}
++
++/// Hostile: a jail that shares its cores says so, in warning.
++#[test]
++fn the_lock_warns_when_the_cores_are_shared() {
++    let summary =
++        jail_status_summary(&jailed(), false).with_cpu_reservation(Some(&CpuReservation {
++            cpus: vec![4, 5],
++            shared: true,
++        }));
++    assert!(
++        summary
++            .lines
++            .iter()
++            .any(|line| line.starts_with("Shares CPUs 4-5 with another jail")),
++        "{:?}",
++        summary.lines
++    );
++    assert_eq!(summary.color, Color::Warning);
++}
++
++#[test]
++fn the_quota_alone_adds_no_line() {
++    let plain = jail_status_summary(&jailed(), false);
++    assert_eq!(plain.clone().with_cpu_reservation(None), plain);
++}
+diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
+index dd169ee..6bbf59e 100644
+--- a/crates/agent_ui/src/conversation_view/thread_view.rs
++++ b/crates/agent_ui/src/conversation_view/thread_view.rs
+@@ -6956,8 +6956,14 @@ impl ThreadView {
+                 agent_sandbox::AgentSandboxSettings::get_global(cx),
+             ),
+         );
+-        let summary =
+-            crate::agent_jail_status::jail_status_summary(&record, drifted).with_pending(pending);
++        // §6.63: the cores this jail reserved, and whether it shares them.
++        let reservation = agent_sandbox::LaunchRegistry::get_with_id(&self.agent_id, &root, cx)
++            .and_then(|(launch_id, _)| {
++                agent_sandbox::LaunchRegistry::cpu_reservation(launch_id, cx)
++            });
++        let summary = crate::agent_jail_status::jail_status_summary(&record, drifted)
++            .with_pending(pending)
++            .with_cpu_reservation(reservation.as_ref());
+         // Zeo next §6.53/§6.54: the kill switch, for a jail whose process runs. A paused jail is
+         // thawed first: a frozen process only acts on the signal once it runs again.
+         let stop = move |pid: u32, paused: bool| {
+@@ -7000,10 +7006,36 @@ impl ThreadView {
+             }),
+             _ => None,
+         };
++        // §6.63 (operator, 2026-11-22): "Reserve CPUs" where the operator acts on the jail. It
++        // writes the project's setting and restarts the agent, which reserves (or frees) its cores.
++        let reserve_toggle = (record.reason == agent_sandbox::launch::Reason::On).then(|| {
++            let reserving = agent_sandbox::AgentSandboxSettings::get_global(cx)
++                .reserve_cpus_for_key(record.settings_key.as_deref());
++            let shared = reservation.as_ref().is_some_and(|reservation| reservation.shared);
++            let root = root.clone();
++            let restart = std::rc::Rc::new(self.restart_agent_for_jail());
++            crate::agent_jail_status::render_cpu_reservation_toggle(
++                reserving,
++                shared,
++                Box::new(move |window, cx| {
++                    let saved =
++                        agent_sandbox::confirm::set_project_reserve_cpus(&root, !reserving, cx);
++                    let restart = restart.clone();
++                    window
++                        .spawn(cx, async move |cx| {
++                            if saved.await {
++                                cx.update(|window, cx| restart(window, cx)).log_err();
++                            }
++                        })
++                        .detach();
++                }),
++            )
++        });
+         Some(
+             h_flex()
+                 .gap_1()
+                 .children(paused_controls)
++                .children(reserve_toggle)
+                 .child(button)
+                 .into_any_element(),
+         )
 diff --git a/crates/settings_content/src/settings_content.rs b/crates/settings_content/src/settings_content.rs
-index d5239c8..a0f34cf 100644
+index d5239c8..832536a 100644
 --- a/crates/settings_content/src/settings_content.rs
 +++ b/crates/settings_content/src/settings_content.rs
 @@ -386,6 +386,19 @@ pub struct AgentSandboxSettingsContent {
@@ -1592,7 +2454,20 @@ index d5239c8..a0f34cf 100644
      /// Per-project overrides, keyed by the project's absolute root path.
      ///
      /// Default: {}
-@@ -428,6 +441,10 @@ pub struct AgentSandboxProjectSettingsContent {
+@@ -414,6 +427,12 @@ pub struct AgentSandboxLimitsContent {
+     ///
+     /// Default: null
+     pub disk_quota: Option<String>,
++    /// Whether the jail reserves the cores its CPU quota pays for: pinned to `ceil(cpu_quota /
++    /// 100)` cores no other reserving jail holds, or told it shares them when too few are free.
++    /// Off, the quota alone limits it, spread over every core.
++    ///
++    /// Default: false
++    pub reserve_cpus: Option<bool>,
+ }
+ 
+ /// The sandbox settings of one project, keyed by its absolute root path.
+@@ -428,6 +447,10 @@ pub struct AgentSandboxProjectSettingsContent {
      pub allow_hosts: Option<Vec<String>>,
      /// Limits for this project, each replacing the default it names.
      pub limits: Option<AgentSandboxLimitsContent>,
@@ -1616,7 +2491,7 @@ index 53f82d4..f0b859f 100644
      let preview = preview_command(
          &policy,
 diff --git a/crates/settings_ui/src/pages/agent_jail_page.rs b/crates/settings_ui/src/pages/agent_jail_page.rs
-index ed5c064..bd2a87e 100644
+index ed5c064..2f489d7 100644
 --- a/crates/settings_ui/src/pages/agent_jail_page.rs
 +++ b/crates/settings_ui/src/pages/agent_jail_page.rs
 @@ -206,6 +206,8 @@ pub(crate) fn page_key<'a>(
@@ -1628,15 +2503,16 @@ index ed5c064..bd2a87e 100644
  }
  
  /// The command a jailed start of the project would run, from [`command::generate`]. Reads no file
-@@ -242,6 +244,7 @@ pub(crate) fn preview_command(
+@@ -242,6 +244,8 @@ pub(crate) fn preview_command(
      let inputs = JailInputs {
          state_root: extras.state_dir.as_deref(),
          limit_args: &extras.limit_args,
 +        host_args: &extras.host_args,
++        ro_maps: &[],
          ai_jail: ai_jail.unwrap_or(Path::new("ai-jail")),
          project_root: root,
          claude_dir: &claude_dir,
-@@ -887,6 +890,11 @@ pub(crate) fn render_agent_jail_page(
+@@ -887,6 +891,11 @@ pub(crate) fn render_agent_jail_page(
                  } else {
                      Vec::new()
                  },
@@ -1649,24 +2525,26 @@ index ed5c064..bd2a87e 100644
              let preview = preview_command(
                  &policy,
 diff --git a/crates/settings_ui/src/pages/agent_jail_page_tests.rs b/crates/settings_ui/src/pages/agent_jail_page_tests.rs
-index a078c42..b4f7db0 100644
+index a078c42..7f434be 100644
 --- a/crates/settings_ui/src/pages/agent_jail_page_tests.rs
 +++ b/crates/settings_ui/src/pages/agent_jail_page_tests.rs
-@@ -614,6 +614,8 @@ mod page {
+@@ -614,6 +614,9 @@ mod page {
              allow_hosts: Vec::new(),
              state_root: "/var/tmp/zeo-jail".to_string(),
              limits: Default::default(),
 +            mask_host: false,
 +            claude_ai_connectors: false,
++            reserve_cpus: false,
              projects: Default::default(),
          };
          sandbox.projects.insert(
-@@ -623,6 +625,8 @@ mod page {
+@@ -623,6 +626,9 @@ mod page {
                  rw_maps: Vec::new(),
                  allow_hosts: vec!["registry.npmjs.org".to_string()],
                  limits: Default::default(),
 +                mask_host: None,
 +                claude_ai_connectors: None,
++                reserve_cpus: None,
              },
          );
          let link = Path::new("/home/u/link");

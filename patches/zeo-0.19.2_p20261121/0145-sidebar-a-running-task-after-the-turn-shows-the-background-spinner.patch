@@ -1,8 +1,8 @@
-From fd014aafbc552eeafa5e11a6f135412a1a645162 Mon Sep 17 00:00:00 2001
+From 48c994078b550b6578562ce3cd868cb4962cb059 Mon Sep 17 00:00:00 2001
 From: zed-patches <zed-patches@localhost>
 Date: Sun, 22 Nov 2026 14:15:16 -0300
-Subject: [PATCH] sidebar: a thread whose task still runs after its turn shows
- the background spinner
+Subject: [PATCH] sidebar: a running task after the turn shows the spinner, and
+ Plus has its own icon
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -25,11 +25,19 @@ _claude/tasks snapshot and only when its own, non-ambient set changes; a task
 the snapshot reports running did not count. The row now counts the larger of
 the two: background_work(count, tasks). An ended task is not work.
 
-What this does not change: an idle Plus row still shows the Terminal glyph,
-the fallback for an agent without an icon of its own; giving Plus an icon is
-a separate choice.
+Amended 2026-11-22 (operator): Claude Agent (Plus) has Claude's icon
+(IconName::AiClaude), so its idle rows stop showing the Terminal glyph a user
+reads as "running in a terminal". Two places choose it, with one rule:
+agent_servers::custom_agent_logo, the thread's own icon (CustomAgentServer
+returned Terminal for every custom agent), and the sidebar's
+custom_agent_icon for rows read from metadata (the sidebar does not depend on
+agent_servers, so the three-line rule is repeated there). Every other custom
+agent, the TUI adapter included, keeps Terminal.
 
-Test sidebar_task_feed_background_tests (new):
+Tests: custom::tests::plus_has_claudes_icon_and_other_custom_agents_terminal
+and sidebar_task_feed_background_tests::
+test_sidebar_task_feed_background_plus_rows_have_claudes_icon (Red seen with
+Terminal for every custom agent). sidebar_task_feed_background_tests (new):
 test_sidebar_task_feed_background_a_running_task_marks_an_idle_row -- an
 idle row turns Background on a snapshot with a running task and back on a
 completed one. Red seen with the count alone.
@@ -37,8 +45,62 @@ completed one. Red seen with the count alone.
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---
 
+diff --git a/crates/agent_servers/src/custom.rs b/crates/agent_servers/src/custom.rs
+index 3992b03..4e8cb07 100644
+--- a/crates/agent_servers/src/custom.rs
++++ b/crates/agent_servers/src/custom.rs
+@@ -22,6 +22,17 @@ pub const CURSOR_ID: &str = "cursor";
+ /// whose environment carries it.
+ pub const ZEO_THREAD_ENV: &str = "ZEO_THREAD";
+ 
++/// A custom agent's icon: Claude Agent (Plus) has Claude's (Zeo §6.68, operator 2026-11-22), so
++/// its idle thread rows stop showing the Terminal glyph a user reads as "running in a terminal";
++/// every other custom agent, the TUI adapter included, keeps Terminal.
++pub fn custom_agent_logo(agent_id: &AgentId) -> IconName {
++    if agent_id.0.as_ref() == project::agent_registry_store::ZEO_PLUS_AGENT_ID {
++        IconName::AiClaude
++    } else {
++        IconName::Terminal
++    }
++}
++
+ /// A generic agent server implementation for custom user-defined agents
+ pub struct CustomAgentServer {
+     agent_id: AgentId,
+@@ -39,7 +50,7 @@ impl AgentServer for CustomAgentServer {
+     }
+ 
+     fn logo(&self) -> IconName {
+-        IconName::Terminal
++        custom_agent_logo(&self.agent_id)
+     }
+ 
+     fn default_mode(&self, cx: &App) -> Option<acp_v2::SessionConfigValueId> {
+@@ -345,6 +356,22 @@ fn default_settings_for_agent() -> settings::CustomAgentServerSettings {
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    /// Zeo §6.68 (operator, 2026-11-22): Plus's threads carry Claude's icon; the TUI adapter and
++    /// other custom agents keep Terminal.
++    #[test]
++    fn plus_has_claudes_icon_and_other_custom_agents_terminal() {
++        let logo = |id: &str| CustomAgentServer::new(AgentId::new(id)).logo();
++        assert_eq!(
++            logo(project::agent_registry_store::ZEO_PLUS_AGENT_ID),
++            IconName::AiClaude
++        );
++        assert_eq!(
++            logo(project::agent_registry_store::ZEO_TUI_AGENT_ID),
++            IconName::Terminal
++        );
++        assert_eq!(logo("my-agent"), IconName::Terminal);
++    }
+     use collections::HashMap;
+     use gpui::TestAppContext;
+     use project::agent_registry_store::{
 diff --git a/crates/sidebar/src/sidebar.rs b/crates/sidebar/src/sidebar.rs
-index d7ab96c..b727afc 100644
+index d7ab96c..62b9ca2 100644
 --- a/crates/sidebar/src/sidebar.rs
 +++ b/crates/sidebar/src/sidebar.rs
 @@ -100,6 +100,8 @@ mod sidebar_pinned_persist_tests;
@@ -50,6 +112,15 @@ index d7ab96c..b727afc 100644
  mod sub_thread_marker;
  
  mod organization;
+@@ -1856,7 +1858,7 @@ impl Sidebar {
+             let agent = Agent::from(agent_id.clone());
+             let icon = match agent {
+                 Agent::NativeAgent => IconName::ZedAgent,
+-                Agent::Custom { .. } => IconName::Terminal,
++                Agent::Custom { .. } => custom_agent_icon(agent_id),
+ 
+                 _ => IconName::ZedAgent,
+             };
 @@ -9215,7 +9217,7 @@ fn all_thread_infos_for_workspace(
                  has_pending_elicitation,
                  thread.had_error(),
@@ -59,10 +130,21 @@ index d7ab96c..b727afc 100644
                  any_child_active(thread, cx),
              );
  
-@@ -9488,6 +9490,16 @@ fn dump_single_workspace(workspace: &Workspace, output: &mut String, cx: &gpui::
+@@ -9488,6 +9490,27 @@ fn dump_single_workspace(workspace: &Workspace, output: &mut String, cx: &gpui::
  /// both outrank an error, and background work (0029's tasks, or a running subagent, R4.1)
  /// marks only a thread that is otherwise idle -- it never hides a prompt, a question or an
  /// error. A subagent that has not reported, or reports Unknown, is not activity (R4.4).
++/// A custom agent's row icon, as `agent_servers::custom_agent_logo` gives its thread (Zeo §6.68,
++/// operator 2026-11-22): Claude for Claude Agent (Plus), whose idle rows showed the Terminal
++/// glyph a user reads as "running in a terminal"; Terminal for every other custom agent.
++fn custom_agent_icon(agent_id: &AgentId) -> IconName {
++    if agent_id.0.as_ref() == project::agent_registry_store::ZEO_PLUS_AGENT_ID {
++        IconName::AiClaude
++    } else {
++        IconName::Terminal
++    }
++}
++
 +/// The background work a row counts (Zeo §6.68, ask 92): the adapter's `_claude/backgroundTasks`
 +/// count, or the tasks its `_claude/tasks` feed reports running, whichever is larger. The count
 +/// alone missed a task the feed (and the tasks card) showed running after the turn ended -- the
@@ -78,10 +160,10 @@ index d7ab96c..b727afc 100644
      pending_elicitation: bool,
 diff --git a/crates/sidebar/src/sidebar_task_feed_background_tests.rs b/crates/sidebar/src/sidebar_task_feed_background_tests.rs
 new file mode 100644
-index 0000000..2063e5e
+index 0000000..ce75954
 --- /dev/null
 +++ b/crates/sidebar/src/sidebar_task_feed_background_tests.rs
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,117 @@
 +// Zeo proposal §6.68 (ask 92): a thread whose turn has ended while a task of its `_claude/tasks`
 +// feed still runs reads Background (the accent spinner), not idle -- where the row showed the
 +// agent's icon, which for Claude Agent (Plus) is the Terminal fallback. Captured on Xvfb on
@@ -179,5 +261,23 @@ index 0000000..2063e5e
 +    assert_ne!(
 +        status(&sidebar, &session, cx),
 +        AgentThreadStatus::Background
++    );
++}
++
++/// Operator, 2026-11-22: Claude Agent (Plus)'s rows carry Claude's icon, not Terminal; other
++/// custom agents (the TUI adapter's threads) keep Terminal.
++#[test]
++fn test_sidebar_task_feed_background_plus_rows_have_claudes_icon() {
++    assert_eq!(
++        custom_agent_icon(&AgentId::new(
++            project::agent_registry_store::ZEO_PLUS_AGENT_ID
++        )),
++        IconName::AiClaude
++    );
++    assert_eq!(
++        custom_agent_icon(&AgentId::new(
++            project::agent_registry_store::ZEO_TUI_AGENT_ID
++        )),
++        IconName::Terminal
 +    );
 +}
