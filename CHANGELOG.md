@@ -31,6 +31,13 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.19.0_p20261121] — 2026-11-21
+
+Zeo `0.19.0_p20261121`: proposal §6.54 on the same Zed `2f808b3c`. Minor: `0141` adds settings and
+UI. The series is 135. Heavy work on bentoo-lab (operator, 2026-11-21); GUI proof local. Gates:
+full `test.sh` 7915/7915 on bentoo-lab, `verify.sh` and `check-sync` in sync, `ebuild prepare` with
+and without USE `ai-jail`.
+
 - **Added** `0141` (USE `ai-jail`, after `0057`, proposal §6.54): jail limits (`agent_sandbox.limits`,
   defaults 8G / 400 % / 4096, `0` turns one off, a disk quota alone brings the task cap), a
   `--state-root` per project (its own home, /tmp and Claude login), fail closed when ai-jail lacks
