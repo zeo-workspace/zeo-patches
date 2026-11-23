@@ -31,6 +31,37 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.22.0_p20261122] — 2026-11-23
+
+Zeo `0.22.0_p20261122`: the series on Zed `f126950f` (2026-11-22, 7 commits past `2f808b3c`) and the
+operator's asks of 2026-11-22 evening. Minor: `0153`–`0158` add behaviour and change a default
+(Hide the Host on). The series is 152. Gates, all local (32 cores, the operator's choice for this
+session): full `test.sh --doc` 8796/8796 (26 skipped) + 45 doctests; `verify.sh` 152/152;
+`check-sync.sh` in sync; `ebuild … clean prepare` offline 150 applied (`0050`/`0051` are USE `test`);
+`selftest.sh` 118/118; clippy and `cargo fmt --check` clean in the touched crates; `osv-scanner` on
+`Cargo.lock` unchanged from `2f808b3c`.
+
+- **Bump** to Zed `f126950f`: `refresh.sh` 146/146 with no conflict; 21 patches moved only in
+  offsets. #67336 (two clients on one remote server) shares no file with `0124`.
+- **Added** `0153` (USE `claude-agent-acp-plus`, after `0151`, on `0107`): a backtick fence of three
+  or more closes with as many; a backtick typed onto a just-closed fence grows its closing.
+- **Added** `0154` (ungrouped, after `0124`): a Markdown `>` quote continues on a newline and on a
+  multi-line paste; upstream's `test_markdown_indents` case 7 now expects the continuation.
+- **Added** `0155` (after `0153`): Markdown files in the editor get the composer's look (`0107`,
+  `0122`, `0153`) through the same functions; file-backed singleton buffers up to 1 MiB.
+- **Added** `0156` (after `0155`): the tasks card's Open turns into Back while the task's thread is
+  shown; the eye's preview sits on `panel_background`.
+- **Added** `0157` (USE `ai-jail`, after `0152`): Restart Session on the jail's not-enabled notice.
+- **Added** `0158` (after `0157`): `agent_sandbox.mask_host` defaults to true; Reserve CPUs and a new
+  Hide the Host switch on the Agent Sandbox page, the lock-side toggle removed. The ebuild's
+  RDEPEND moves to `sys-apps/ai-jail-3.5.0-r2` (`--mask-host`).
+- `0125`, `0146`: two rustfmt findings fixed in place. `0052`, `0057`, `0058`, `0063`, `0067`,
+  `0084`, `0085`, `0107`, `0141`: context only, regenerated.
+- **Changed** `scripts/test.sh`: 14 crates the series patches join `CRATES`; `HOST_SKIP` passes two
+  tests that fail here on unpatched upstream as `--skip`; the caller's arguments go first.
+- **Changed** `rebrand/zed-literals.txt`: `0137`'s test-only `"Zed"` (the native agent's id).
+- Xvfb proof: the hub's `docs/assets/zeo-asks-2026-11-23/`.
+
 ## [0.21.0_p20261121] — 2026-11-22
 
 Zeo `0.21.0_p20261121`: MCP over ACP (§6.69 step 3), §6.13's `zeo-lsp` and a jail's capabilities
