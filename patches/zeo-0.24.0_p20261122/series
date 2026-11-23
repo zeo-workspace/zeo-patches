@@ -790,6 +790,9 @@
 # Hide the Disks (agent_sandbox.overlay_system, off by default) passes --overlay-system, refused
 # from an ai-jail without it (docs/HOST-VIEW-EXTRA-LAYER.md §4.4). On 0159.
 0160-agent-sandbox-settings-ui-the-host-view-s-identity-layer-and-hide-the-d.patch
+# 0161: Hide the Kernel (agent_sandbox.syscall_view, off by default) passes ai-jail 3.5.0-r4's
+# --syscall-view, refused from an ai-jail without it (docs/HOST-VIEW-EXTRA-LAYER.md §4.3). On 0160.
+0161-agent-sandbox-settings-ui-hide-the-kernel-uname-and-sysinfo-from-ai-jai.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

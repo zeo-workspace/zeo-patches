@@ -31,6 +31,20 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.24.0_p20261122] — 2026-11-23
+
+Zeo `0.24.0_p20261122`: 0.23.0 plus `0161`, the Zeo side of the hub's
+`docs/HOST-VIEW-EXTRA-LAYER.md` §4.3 (step 2) for ai-jail 3.5.0-r4's `--syscall-view` (the
+fork's `feat/syscall-view`). The series is 155. Gates, on bentoo-lab: `test.sh --doc`
+8809/8809 (26 skipped) + 45 doctests; agent_sandbox + settings_ui + settings_content 389/389
+with clippy `-D warnings` clean; `verify.sh` 155/155; Red seen for three of the new tests.
+
+- **Added** `0161` (USE `ai-jail`, after `0160`): `supports_syscall_view` from `--help`;
+  `HostLayer::syscall_view` passes `--syscall-view` under `mask_host`;
+  `agent_sandbox.syscall_view` (off by default, per project), refused from an ai-jail without
+  the option (`syscall_view_unsupported`); the page's "Hide the Kernel" switch. `RDEPEND` moves
+  to `>=sys-apps/ai-jail-3.5.0-r4`.
+
 ## [0.23.0_p20261122] — 2026-11-23
 
 Zeo `0.23.0_p20261122`: 0.22.1 plus `0160`, the Zeo side of the hub's
