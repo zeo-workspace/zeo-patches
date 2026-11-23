@@ -727,6 +727,10 @@
 # 0153: in the composer, ```` and longer fences close as long as they are; a fourth
 # backtick grows the closing that ``` got (operator, 2026-11-22). On 0107.
 0153-agent-ui-a-longer-fence-in-the-composer-closes-as-long-as-it-is.patch
+# 0155: an editor on a Markdown file gets the composer's look -- block rows (0107), quotation
+# highlight (0122) and fence closing (0107, 0153) -- through the same functions (operator,
+# 2026-11-22). On 0153.
+0155-agent-ui-markdown-files-get-the-composer-s-block-look-and-quotation-hi.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
