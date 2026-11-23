@@ -69,7 +69,7 @@ CRATES=(acp_thread agent agent_sandbox agent_servers agent_settings agent_tasks_
 	settings_content settings_ui sidebar title_bar ui voice_input workspace zed
 	zed_credentials_provider zeo_browser_host
 	debugger_ui extensions_ui fs git inspector_ui language_model_selector language_models
-	language_tools node_runtime sandbox sandbox_linux util zed_actions zlog)
+	language_tools node_runtime sandbox sandbox_linux secret_vault util zed_actions zlog)
 
 # Tests that fail on this desktop with no patch applied: both fail the same way on
 # unpatched upstream 2f808b3c and f126950f, so they say nothing about the series

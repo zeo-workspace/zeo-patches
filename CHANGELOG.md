@@ -31,6 +31,25 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.25.0_p20261122] — 2026-11-23
+
+Zeo `0.25.0_p20261122`: 0.24.0 plus `0162` (the vault's first slice, hub
+`docs/SECRETS-VAULT-PAGE.md`) and `0163` (Hide the Disks on by default). The series is 157.
+Gates, on bentoo-lab: `test.sh --doc` 8817/8817 (27 skipped) + 45 doctests; clippy `-D warnings`
+on agent_sandbox, settings_ui and settings_content clean; `verify.sh` 157/157; secret_vault's
+live-keyring test against a throwaway `oo7-daemon` (azukari's lab image); the Secrets page on
+Xvfb (hub `docs/assets/zeo-secrets-2026-11-23/`), which found and fixed a lost-input bug.
+
+- **Added** `0162` (USE `ai-jail`, after `0161`): new crate `secret_vault` and a "Secrets"
+  settings sub-page; `test.sh` gains `secret_vault`.
+- **Added** `0163` (USE `ai-jail`, after `0162`): `agent_sandbox.overlay_system` defaults to
+  true; the default is skipped on an ai-jail without `--overlay-system`, a project's own choice
+  still refuses.
+- **Tooling note**: a release-windows run reads the series when it starts, so an untested patch
+  must stay out of the series directory while one runs (0.24.0's Windows build was restarted for
+  that). `xvfb-proof.sh` cannot run on the lab: its images lack ImageMagick's `import`; the debug
+  binary was built there and the proof ran here.
+
 ## [0.24.0_p20261122] — 2026-11-23
 
 Zeo `0.24.0_p20261122`: 0.23.0 plus `0161`, the Zeo side of the hub's
