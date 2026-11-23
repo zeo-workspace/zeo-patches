@@ -123,6 +123,13 @@ $env:CARGO_BUILD_JOBS = "$Jobs"
 # version. The cache lives on the guest's own disk, C:\zeo\sccache, which persists between builds
 # like target\ does (operator's choice, 2026-11-21).
 $sccacheRoot = Join-Path (Split-Path $Src -Parent) 'sccache-bin'
+# A server left by an interrupted run (SCCACHE_IDLE_TIMEOUT=0 below, so it never exits on its own)
+# holds sccache.exe open, and Windows refuses to delete a running binary: the next build in the
+# same guest died here with "Access to the path ... sccache.exe is denied" (0.21.0, 2026-11-22).
+# Stop it before the directory goes; the process kill covers a server whose binary is gone.
+$staleSccache = Join-Path $sccacheRoot 'sccache-v0.18.0-x86_64-pc-windows-msvc\sccache.exe'
+if (Test-Path $staleSccache) { try { & $staleSccache --stop-server *> $null } catch { } }
+Get-Process -Name sccache -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 if (Test-Path $sccacheRoot) { Remove-Item -Recurse -Force $sccacheRoot }
 New-Item -ItemType Directory -Path $sccacheRoot | Out-Null
 tar.exe -xf $pinned['sccache-v0.18.0-x86_64-pc-windows-msvc.zip'] -C $sccacheRoot
