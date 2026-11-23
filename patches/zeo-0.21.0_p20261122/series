@@ -775,6 +775,13 @@
 # MCP servers (none by default; proxied ones kept outside the jail's view; one carrying a
 # secret asks first), Zeo's skills, claude.ai connectors (§6.64 step 2).
 0152-agent-sandbox-a-jail-s-capabilities-chosen-per-project.patch
+# 0157: the jail's not-enabled notice offers Restart Session beside Open Capabilities, since a
+# choice made there applies on the next start (operator, 2026-11-22). On 0152.
+0157-agent-ui-agent-servers-the-jail-s-not-enabled-notice-offers-restart-se.patch
+# 0158: Hide the Host (mask_host) on by default -- needs ai-jail 3.5.0-r2's --mask-host -- and
+# Reserve CPUs moves from beside the lock to the Agent Sandbox page, with a Hide the Host switch
+# (operator, 2026-11-22). On 0157.
+0158-agent-sandbox-settings-ui-hide-the-host-on-by-default-reserve-cpus-mov.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

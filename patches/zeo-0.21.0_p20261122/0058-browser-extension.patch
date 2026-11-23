@@ -7174,7 +7174,7 @@ index e421ac0..c80e14d 100644
      selection: Option<&thread_view::PermissionSelection>,
      is_allow: bool,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index ed0c096..9443db5 100644
+index d9c4448..72bf351 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -1584,7 +1584,7 @@ impl ThreadView {
@@ -7527,7 +7527,7 @@ index ed0c096..9443db5 100644
      pub fn cancel_generation(&mut self, cx: &mut Context<Self>) {
          self.thread_retry_status.take();
          self.thread_error.take();
-@@ -16608,6 +16726,7 @@ pub(crate) fn open_link(
+@@ -16594,6 +16712,7 @@ pub(crate) fn open_link(
              MentionUri::TerminalSelection { .. } => {}
              MentionUri::GitDiff { .. } => {}
              MentionUri::MergeConflict { .. } => {}
