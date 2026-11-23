@@ -646,7 +646,7 @@ index b4d779b..e13822f 100644
          Either::Left((output, _)) => Some(output),
          Either::Right(((), _)) => None,
 diff --git a/crates/agent_ui/src/agent_ui.rs b/crates/agent_ui/src/agent_ui.rs
-index dbb9840..cabe4a0 100644
+index ca86e33..e73ff08 100644
 --- a/crates/agent_ui/src/agent_ui.rs
 +++ b/crates/agent_ui/src/agent_ui.rs
 @@ -12,6 +12,7 @@ mod config_options;

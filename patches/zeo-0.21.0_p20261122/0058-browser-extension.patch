@@ -624,7 +624,7 @@ index 7a8659c..831393d 100644
  
  [dev-dependencies]
 diff --git a/crates/agent_ui/src/agent_ui.rs b/crates/agent_ui/src/agent_ui.rs
-index f4cdfed..7f280c8 100644
+index c648391..0eb8b51 100644
 --- a/crates/agent_ui/src/agent_ui.rs
 +++ b/crates/agent_ui/src/agent_ui.rs
 @@ -8,6 +8,8 @@ mod agent_panel;
@@ -7174,7 +7174,7 @@ index e421ac0..c80e14d 100644
      selection: Option<&thread_view::PermissionSelection>,
      is_allow: bool,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 6bbf59e..230a77e 100644
+index ed0c096..9443db5 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -1584,7 +1584,7 @@ impl ThreadView {
@@ -7527,7 +7527,7 @@ index 6bbf59e..230a77e 100644
      pub fn cancel_generation(&mut self, cx: &mut Context<Self>) {
          self.thread_retry_status.take();
          self.thread_error.take();
-@@ -16606,6 +16724,7 @@ pub(crate) fn open_link(
+@@ -16608,6 +16726,7 @@ pub(crate) fn open_link(
              MentionUri::TerminalSelection { .. } => {}
              MentionUri::GitDiff { .. } => {}
              MentionUri::MergeConflict { .. } => {}

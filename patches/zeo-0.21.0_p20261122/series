@@ -142,6 +142,10 @@
 # Zeo built from source carries none, so it changes nothing there. UNGROUPED:
 # zeo-bin applies the whole series, and the patch depends on 0021 alone.
 0124-remote-upload-the-server-zeo-bin-carries.patch
+# 0154: a Markdown `>` quote continues on a new line and on a multi-line paste, as
+# upstream continues lists (operator, 2026-11-22). Editor-wide, in the composer and in
+# Markdown files alike, so ungrouped like 0124.
+0154-editor-a-markdown-quote-continues-on-a-new-line-and-on-a-paste.patch
 
 # @feature: claude-agent-acp-plus
 0001-force-enable-claude-agent-acp-plus.patch
@@ -720,6 +724,9 @@
 # diagnostics, definition, references, hover, document symbols, read-only; agent.zeo_lsp,
 # default on (§6.13).
 0151-agent-servers-zeo-lsp-language-servers-for-claude-agent-plus.patch
+# 0153: in the composer, ```` and longer fences close as long as they are; a fourth
+# backtick grows the closing that ``` got (operator, 2026-11-22). On 0107.
+0153-agent-ui-a-longer-fence-in-the-composer-closes-as-long-as-it-is.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch

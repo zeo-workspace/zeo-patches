@@ -2578,7 +2578,7 @@ index 0c6c92d..22b18aa 100644
 +    assert!(!has(&installed.lines, "needs ai-jail"));
 +}
 diff --git a/crates/agent_ui/src/agent_ui.rs b/crates/agent_ui/src/agent_ui.rs
-index b3567a8..f4cdfed 100644
+index 46e671b..c648391 100644
 --- a/crates/agent_ui/src/agent_ui.rs
 +++ b/crates/agent_ui/src/agent_ui.rs
 @@ -1,6 +1,8 @@
