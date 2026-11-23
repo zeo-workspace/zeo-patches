@@ -67,7 +67,21 @@ CRATES=(acp_thread agent agent_sandbox agent_servers agent_settings agent_tasks_
 	feature_flags icons install_cli markdown oauth_callback_server onboarding paths
 	project recent_projects release_channel remote remote_server reqwest_client settings
 	settings_content settings_ui sidebar title_bar ui voice_input workspace zed
-	zed_credentials_provider zeo_browser_host)
+	zed_credentials_provider zeo_browser_host
+	debugger_ui extensions_ui fs git inspector_ui language_model_selector language_models
+	language_tools node_runtime sandbox sandbox_linux util zed_actions zlog)
+
+# Tests that fail on this desktop with no patch applied: both fail the same way on
+# unpatched upstream 2f808b3c and f126950f, so they say nothing about the series
+# (measured 2026-11-23, when the second line of CRATES was added). Passed to nextest
+# as `-- --skip`, not as a filterset, because several -E filtersets are a union and
+# would cancel a caller's own -E.
+HOST_SKIP=(
+	# sandbox: "expected a denied attempt for denied.example, got [Ready]"
+	network_events_report_denied_hosts
+	# extensions_ui: left 1, right 0, extension_suggestions.rs:585
+	test_suggestion_returns_after_failed_install
+)
 
 # The Claude Agent (Plus) half of the e2e suites, 0051's zeo_plus_e2e_tests module.
 E2E_PLUS_FILTER='test(/^zeo_plus_e2e_tests::/)'
@@ -198,10 +212,12 @@ main() {
 			>"${meta}/cargo.json") || { failed=1; return 0; }
 		(cd "${src}" && "${sysenv[@]}" "${runenv[@]}" cargo-nextest nextest run --no-fail-fast \
 			--binaries-metadata "${meta}/binaries.json" --cargo-metadata "${meta}/cargo.json" \
-			"${run[@]}" "${extra[@]}") || failed=1
+			"${extra[@]}" "${run[@]}") || failed=1
 	}
 
-	nextest_phase "nextest: ${#CRATES[@]} crates" "${pkgs[@]}" --
+	local -a skips=(--)
+	for name in "${HOST_SKIP[@]}"; do skips+=(--skip "${name}"); done
+	nextest_phase "nextest: ${#CRATES[@]} crates" "${pkgs[@]}" -- "${skips[@]}"
 
 	if ((doc)); then
 		step "doctests"
