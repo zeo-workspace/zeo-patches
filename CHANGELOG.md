@@ -31,6 +31,18 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.22.1_p20261122] — 2026-11-23
+
+Zeo `0.22.1_p20261122`: 0.22.0 plus `0159`, the part of the hub's `docs/HOST-VIEW-EXTRA-LAYER.md`
+(§4.1) that needs no ai-jail change. Patch: a jail stops showing what 0.22.0's host view still let
+through. The series is 153. Gates: agent_sandbox + agent_servers + settings_ui 693/693; `verify.sh`
+153/153; `check-sync.sh` in sync; `ebuild … clean prepare` 151 applied; Red seen for the new test;
+the masks run in the installed ai-jail 3.5.0-r2 with every common tool working.
+
+- **Added** `0159` (USE `ai-jail`, after `0158`): the every-jail mask list grows from 6 paths to 22 --
+  `/etc/crypttab` (world-readable, names the encrypted volumes), `/etc/portage`, swap, disk, NUMA,
+  memory-block, interrupt, scheduler and pressure files, the boot id, `/usr/lib/modules`, `/usr/src`.
+
 ## [0.22.0_p20261122] — 2026-11-23
 
 Zeo `0.22.0_p20261122`: the series on Zed `f126950f` (2026-11-22, 7 commits past `2f808b3c`) and the

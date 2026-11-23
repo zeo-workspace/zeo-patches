@@ -782,6 +782,10 @@
 # Reserve CPUs moves from beside the lock to the Agent Sandbox page, with a Hide the Host switch
 # (operator, 2026-11-22). On 0157.
 0158-agent-sandbox-settings-ui-hide-the-host-on-by-default-reserve-cpus-mov.patch
+# 0159: every jail also masks crypttab, portage, swap/disk/NUMA/memory files, the per-CPU interrupt
+# and scheduler tables, pressure, the boot id and the kernel's modules and sources
+# (docs/HOST-VIEW-EXTRA-LAYER.md §4.1, operator 2026-11-23). On 0158.
+0159-agent-sandbox-a-jail-also-hides-the-disks-names-swap-and-the-kernel-s.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
