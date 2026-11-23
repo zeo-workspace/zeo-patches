@@ -177,10 +177,10 @@ index fa9732f..5bf34fe 100644
    // that receives element selections from a dev-server page and hands them to
    // the agent panel. Turning it off stops listening and removes the socket.
 diff --git a/crates/agent_ui/src/agent_panel.rs b/crates/agent_ui/src/agent_panel.rs
-index 5c78f76..f6f7890 100644
+index a56f9d0..356c5f9 100644
 --- a/crates/agent_ui/src/agent_panel.rs
 +++ b/crates/agent_ui/src/agent_panel.rs
-@@ -4014,6 +4014,58 @@ impl AgentPanel {
+@@ -4041,6 +4041,58 @@ impl AgentPanel {
          thread_id
      }
  
@@ -239,7 +239,7 @@ index 5c78f76..f6f7890 100644
      pub fn active_thread_id(&self, cx: &App) -> Option<ThreadId> {
          match &self.base_view {
              BaseView::AgentThread { conversation_view } => {
-@@ -4876,6 +4928,19 @@ impl AgentPanel {
+@@ -4903,6 +4955,19 @@ impl AgentPanel {
              .collect()
      }
  
@@ -259,7 +259,7 @@ index 5c78f76..f6f7890 100644
      pub fn active_thread_view(&self, cx: &App) -> Option<Entity<ThreadView>> {
          let server_view = self.active_conversation_view()?;
          server_view.read(cx).root_thread_view()
-@@ -5227,13 +5292,17 @@ impl AgentPanel {
+@@ -5254,13 +5319,17 @@ impl AgentPanel {
          let mut potential_removals = self
              .retained_threads
              .iter()
@@ -279,7 +279,7 @@ index 5c78f76..f6f7890 100644
                  };
                  let thread = thread_view.read(cx).thread.read(cx);
                  thread.connection().supports_load_session() && thread.is_idle_for_retention()
-@@ -5250,7 +5319,11 @@ impl AgentPanel {
+@@ -5277,7 +5346,11 @@ impl AgentPanel {
              .take(n)
              .collect::<Vec<_>>();
          for id in to_remove {

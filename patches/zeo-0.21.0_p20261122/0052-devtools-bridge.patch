@@ -565,10 +565,10 @@ index 340eab1..b940e60 100644
  
                      language_model::MessageContent::Text(uri.as_link().to_string())
 diff --git a/crates/agent_ui/src/agent_panel.rs b/crates/agent_ui/src/agent_panel.rs
-index 4673b94..bd0f3c9 100644
+index 44949fb..00b44fb 100644
 --- a/crates/agent_ui/src/agent_panel.rs
 +++ b/crates/agent_ui/src/agent_panel.rs
-@@ -2645,6 +2645,34 @@ impl AgentPanel {
+@@ -2672,6 +2672,34 @@ impl AgentPanel {
              .cloned()
      }
  
@@ -603,7 +603,7 @@ index 4673b94..bd0f3c9 100644
      fn set_selected_agent_and_persist(&mut self, agent: Agent, cx: &mut Context<Self>) {
          if self.selected_agent != agent {
              self.selected_agent = agent.clone();
-@@ -7880,6 +7908,19 @@ impl AgentPanel {
+@@ -7907,6 +7935,19 @@ impl AgentPanel {
          self.set_base_view(thread.into(), true, window, cx);
      }
  

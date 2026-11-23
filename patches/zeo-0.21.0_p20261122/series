@@ -731,6 +731,9 @@
 # highlight (0122) and fence closing (0107, 0153) -- through the same functions (operator,
 # 2026-11-22). On 0153.
 0155-agent-ui-markdown-files-get-the-composer-s-block-look-and-quotation-hi.patch
+# 0156: the tasks card's Open turns into Back (Exit icon) while the task's own thread is on
+# screen, and the eye's preview sits on the agent panel's background (operator, 2026-11-22).
+0156-agent-ui-the-tasks-card-s-open-turns-into-back-and-the-eye-s-content-s.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
