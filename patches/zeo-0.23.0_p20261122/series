@@ -786,6 +786,10 @@
 # and scheduler tables, pressure, the boot id and the kernel's modules and sources
 # (docs/HOST-VIEW-EXTRA-LAYER.md §4.1, operator 2026-11-23). On 0158.
 0159-agent-sandbox-a-jail-also-hides-the-disks-names-swap-and-the-kernel-s.patch
+# 0160: ai-jail 3.5.0-r3's identity layer under --mask-host takes over swap and the boot id, and
+# Hide the Disks (agent_sandbox.overlay_system, off by default) passes --overlay-system, refused
+# from an ai-jail without it (docs/HOST-VIEW-EXTRA-LAYER.md §4.4). On 0159.
+0160-agent-sandbox-settings-ui-the-host-view-s-identity-layer-and-hide-the-d.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

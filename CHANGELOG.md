@@ -31,6 +31,28 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.23.0_p20261122] — 2026-11-23
+
+Zeo `0.23.0_p20261122`: 0.22.1 plus `0160`, the Zeo side of the hub's
+`docs/HOST-VIEW-EXTRA-LAYER.md` §4.4 for ai-jail 3.5.0-r3's identity layer and
+`--overlay-system` (the fork's `feat/host-view-extra`). The series is 154. Gates, run on
+bentoo-lab: `test.sh --doc` 8806/8806 (26 skipped) + 45 doctests; clippy `-D warnings` on
+agent_sandbox, settings_ui and settings_content clean; `verify.sh` 154/154; `check-sync.sh` in
+sync; Red seen for five of the new tests with the rules disabled.
+
+- **Added** `0160` (USE `ai-jail`, after `0159`): `supports_overlay_system` from `--help`;
+  `host_view::host_args_for` leaves `/proc/swaps` and the boot id to the identity layer under
+  `mask_host`; `agent_sandbox.overlay_system` (off by default, per project) passes
+  `--overlay-system` under `mask_host` and is refused from an ai-jail without it
+  (`overlay_system_unsupported`); the page's "Hide the Disks" switch. `RDEPEND` moves to
+  `>=sys-apps/ai-jail-3.5.0-r3`.
+- **Tooling note** (not committed): the lab image's `::bentoo` predates zeo-0.22.1, so this round
+  ran `test.sh` on the lab against a copy of `::bentoo` carrying this round's `app-editors/zeo`,
+  selected with `PORTAGE_REPOSITORIES`. Clippy there needs `/usr/bin/cargo-clippy` with
+  `CARGO_HOME` set to the Portage work dir's `cargo_home`: `cargo clippy` resolves the
+  subcommand through `$CARGO_HOME/bin`'s rustup proxy, which then honours the tree's
+  `rust-toolchain.toml` and tries to install 1.98.1.
+
 ## [0.22.1_p20261122] — 2026-11-23
 
 Zeo `0.22.1_p20261122`: 0.22.0 plus `0159`, the part of the hub's `docs/HOST-VIEW-EXTRA-LAYER.md`
