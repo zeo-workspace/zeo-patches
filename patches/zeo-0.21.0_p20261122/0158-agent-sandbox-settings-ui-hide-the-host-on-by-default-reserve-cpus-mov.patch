@@ -36,7 +36,8 @@ switch. Only a custom ai_jail_path at an older binary meets the refusal.
 Tests: agent_jail_host_tests (the model: the default hides and reserves,
 a project's own choices replace it); host_view_launch_hides_the_host_by_
 default (a settings file that never names mask_host passes --mask-host
-and pins). The launch fixtures that predate the host view now set it off,
+and pins). The fixtures that predate the host view (agent_sandbox launch and round
+trip, agent_servers sandbox hooks) now set it off,
 as they set the limits off for §6.54; the missing-ai-jail tooltip test
 reads -r2. Red seen with default.json false and the forced reservation
 dropped: both new tests failed.
@@ -151,6 +152,20 @@ index f955b95..626deb3 100644
                  "enabled": true,
                  "ai_jail_path": f.ai_jail,
                  "claude_config_dir": claude_dir,
+diff --git a/crates/agent_sandbox/src/roundtrip_tests.rs b/crates/agent_sandbox/src/roundtrip_tests.rs
+index 877eaad..c71ccc6 100644
+--- a/crates/agent_sandbox/src/roundtrip_tests.rs
++++ b/crates/agent_sandbox/src/roundtrip_tests.rs
+@@ -74,6 +74,9 @@ async fn roundtrip_page_write_to_launch_to_registry_to_drift(cx: &mut TestAppCon
+         "agent_sandbox": {
+             // Zeo next §6.54: a fixture that predates the limits (on by default); 0 turns each off.
+             "limits": { "memory": "0", "cpu_quota": 0, "max_tasks": 0 },
++            // Predates the host view, on by default since 2026-11-22: its fake ai-jail has no
++            // --mask-host.
++            "mask_host": false,
+             "enabled": false,
+             "ai_jail_path": ai_jail,
+             "claude_config_dir": claude_dir,
 diff --git a/crates/agent_sandbox/src/settings.rs b/crates/agent_sandbox/src/settings.rs
 index b6912d8..2fd078c 100644
 --- a/crates/agent_sandbox/src/settings.rs
@@ -175,6 +190,48 @@ index b6912d8..2fd078c 100644
              claude_ai_connectors: sandbox.claude_ai_connectors.unwrap_or(false),
              capabilities: {
                  let defaults = SandboxCapabilities::default();
+diff --git a/crates/agent_servers/src/sandbox_hook_lifecycle_tests.rs b/crates/agent_servers/src/sandbox_hook_lifecycle_tests.rs
+index f7d8821..f2550ba 100644
+--- a/crates/agent_servers/src/sandbox_hook_lifecycle_tests.rs
++++ b/crates/agent_servers/src/sandbox_hook_lifecycle_tests.rs
+@@ -74,6 +74,9 @@ exec cat >/dev/null
+             "agent_sandbox": {
+                 // Zeo next §6.54: a fixture that predates the limits (on by default); 0 turns each off.
+                 "limits": { "memory": "0", "cpu_quota": 0, "max_tasks": 0 },
++                // Predates the host view, on by default since 2026-11-22: its fake ai-jail has no
++                // --mask-host.
++                "mask_host": false,
+                 "enabled": sandbox_on,
+                 "ai_jail_path": ai_jail_path,
+                 "claude_config_dir": self.base.join("claude-jailed"),
+diff --git a/crates/agent_servers/src/sandbox_hook_tests.rs b/crates/agent_servers/src/sandbox_hook_tests.rs
+index 29da47c..67b11eb 100644
+--- a/crates/agent_servers/src/sandbox_hook_tests.rs
++++ b/crates/agent_servers/src/sandbox_hook_tests.rs
+@@ -186,6 +186,9 @@ impl Fixture {
+             "agent_sandbox": {
+                 // Zeo next §6.54: a fixture that predates the limits (on by default); 0 turns each off.
+                 "limits": { "memory": "0", "cpu_quota": 0, "max_tasks": 0 },
++                // Predates the host view, on by default since 2026-11-22: its fake ai-jail has no
++                // --mask-host.
++                "mask_host": false,
+                 "enabled": sandbox_on,
+                 "ai_jail_path": ai_jail_path,
+                 "claude_config_dir": self.claude_dir,
+diff --git a/crates/agent_servers/src/sandbox_hook_v2_tests.rs b/crates/agent_servers/src/sandbox_hook_v2_tests.rs
+index 88515ad..15cceae 100644
+--- a/crates/agent_servers/src/sandbox_hook_v2_tests.rs
++++ b/crates/agent_servers/src/sandbox_hook_v2_tests.rs
+@@ -104,6 +104,9 @@ done
+             "agent_sandbox": {
+                 // Zeo next §6.54: a fixture that predates the limits (on by default); 0 turns each off.
+                 "limits": { "memory": "0", "cpu_quota": 0, "max_tasks": 0 },
++                // Predates the host view, on by default since 2026-11-22: its fake ai-jail has no
++                // --mask-host.
++                "mask_host": false,
+                 "enabled": true,
+                 "ai_jail_path": ai_jail,
+                 "claude_config_dir": base.join("claude-jailed"),
 diff --git a/crates/agent_ui/src/agent_jail_status.rs b/crates/agent_ui/src/agent_jail_status.rs
 index f7cc112..3e56895 100644
 --- a/crates/agent_ui/src/agent_jail_status.rs
