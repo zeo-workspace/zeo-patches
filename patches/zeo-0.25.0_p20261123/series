@@ -811,6 +811,9 @@
 # 0165: Pause freezes the jail (cgroup.freeze) and Resume goes on with nothing lost; Stop
 # asks first (operator, 2026-11-23). On 0141.
 0165-agent-sandbox-pause-freezes-the-jail-and-resume-goes-on-stop-asks-firs.patch
+# 0168: Hide the System Config -- /etc as an allowlist under the host view (ai-jail
+# --minimal-etc, 3.5.0-r5; operator, 2026-11-23). On 0161.
+0168-agent-sandbox-hide-the-system-config-etc-as-an-allowlist-under-the-hos.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

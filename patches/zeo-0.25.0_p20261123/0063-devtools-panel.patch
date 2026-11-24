@@ -148,7 +148,7 @@ longer carries it as context.
 ---
 
 diff --git a/assets/settings/default.json b/assets/settings/default.json
-index 47215d2..40299f6 100644
+index 7564653..cf7d6ee 100644
 --- a/assets/settings/default.json
 +++ b/assets/settings/default.json
 @@ -3157,6 +3157,24 @@

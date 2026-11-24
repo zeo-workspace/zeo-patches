@@ -445,7 +445,7 @@ index 6a1ac3b..db2cff7 100644
    {
      "context": "SettingsWindow > NavigationMenu && !search",
 diff --git a/assets/settings/default.json b/assets/settings/default.json
-index 40299f6..d86b0ed 100644
+index cf7d6ee..9edd875 100644
 --- a/assets/settings/default.json
 +++ b/assets/settings/default.json
 @@ -3146,6 +3146,25 @@
@@ -4773,7 +4773,7 @@ index 3c4b56c..36db254 100644
              which_key: None,
              modeline_lines: None,
 diff --git a/crates/settings_content/src/settings_content.rs b/crates/settings_content/src/settings_content.rs
-index ce47fab..acffc6a 100644
+index 51287f2..541d1c8 100644
 --- a/crates/settings_content/src/settings_content.rs
 +++ b/crates/settings_content/src/settings_content.rs
 @@ -324,6 +324,10 @@ pub struct SettingsContent {
@@ -4787,7 +4787,7 @@ index ce47fab..acffc6a 100644
      /// Number of lines to search for modelines at the beginning and end of files.
      /// Modelines contain editor directives (e.g., vim/emacs settings) that configure
      /// the editor behavior for specific files.
-@@ -583,6 +587,61 @@ impl std::ops::DerefMut for FeatureFlagsMap {
+@@ -591,6 +595,61 @@ impl std::ops::DerefMut for FeatureFlagsMap {
      }
  }
  
@@ -4849,7 +4849,7 @@ index ce47fab..acffc6a 100644
  impl SettingsContent {
      pub fn languages_mut(&mut self) -> &mut HashMap<String, LanguageSettingsContent> {
          &mut self.project.all_languages.languages.0
-@@ -595,6 +654,7 @@ fallible_options::flattened_deserialize!(SettingsContent {
+@@ -603,6 +662,7 @@ fallible_options::flattened_deserialize!(SettingsContent {
          call_hierarchy, command_palette, file_finder, git_panel, git_graph, tabs, tab_bar, tab_switcher, status_bar, preview_tabs, agent,
          agent_servers, audio, auto_update, base_keymap, collaboration_panel, debugger, diagnostics,
          git,
