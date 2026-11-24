@@ -748,6 +748,9 @@
 # 0172: a "Zeo" badge beside each setting Zeo added to Zed's pages, and on the link and
 # title of a page of its own (operator, 2026-11-23/24). On 0110, 0111, 0125, 0126, 0149, 0151.
 0172-settings-ui-a-zeo-badge-marks-the-settings-and-pages-zeo-added.patch
+# 0176: the /btw answer is drawn at the thread's text size (text_ui), not 8/7 larger
+# (operator, 2026-11-23/24). On 0115/0169.
+0176-agent-ui-the-btw-answer-is-drawn-at-the-thread-s-text-size.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
