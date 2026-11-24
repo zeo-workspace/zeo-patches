@@ -737,6 +737,12 @@
 # 0164: a row of Subagents Awaiting Permission opens the waiting subagent's own thread
 # instead of only scrolling to its card (operator, 2026-11-23). On 0072.
 0164-agent-ui-a-row-of-subagents-awaiting-permission-opens-that-subagent-s.patch
+# 0166: Stop Generation (button, Escape, Cancel) and Stop Subagent ask first in a modal
+# (operator, 2026-11-23). On 0072.
+0166-agent-ui-stop-generation-and-stop-subagent-ask-first-in-a-modal.patch
+# 0167: archiving a thread with work running asks first instead of refusing (operator,
+# 2026-11-23). On 0029/0072.
+0167-sidebar-archiving-a-thread-with-work-running-asks-first-instead-of-ref.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch

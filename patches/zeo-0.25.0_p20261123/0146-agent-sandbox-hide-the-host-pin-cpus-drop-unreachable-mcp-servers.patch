@@ -2373,10 +2373,10 @@ index 0000000..324eecf
 +    assert_eq!(plain.clone().with_cpu_reservation(None), plain);
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 893aef0..ad180fc 100644
+index 0e81662..5a1b6e9 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -7006,8 +7006,14 @@ impl ThreadView {
+@@ -7097,8 +7097,14 @@ impl ThreadView {
                  agent_sandbox::AgentSandboxSettings::get_global(cx),
              ),
          );
@@ -2393,7 +2393,7 @@ index 893aef0..ad180fc 100644
          // Zeo next §6.53/§6.54: the kill switch, for a jail whose process runs. A paused jail is
          // thawed first: a frozen process only acts on the signal once it runs again.
          let stop = move |pid: u32, paused: bool| {
-@@ -7050,10 +7056,38 @@ impl ThreadView {
+@@ -7141,10 +7147,38 @@ impl ThreadView {
              }),
              _ => None,
          };

@@ -336,7 +336,7 @@ index 3e56895..77d506b 100644
          .child(
 diff --git a/crates/agent_ui/src/agent_jail_status_pause_tests.rs b/crates/agent_ui/src/agent_jail_status_pause_tests.rs
 new file mode 100644
-index 0000000..5a64e28
+index 0000000..245dd79
 --- /dev/null
 +++ b/crates/agent_ui/src/agent_jail_status_pause_tests.rs
 @@ -0,0 +1,88 @@
@@ -373,7 +373,7 @@ index 0000000..5a64e28
 +    let fs = init(cx);
 +    sandbox_settings(json!({ "agent_sandbox": { "enabled": true } }), cx);
 +    let id = cx.update(|cx| LaunchRegistry::register(running_jail(), cx));
-+    let mut win = window_with_stub_thread(&fs, &["/w/app"], cx).await;
++    let win = window_with_stub_thread(&fs, &["/w/app"], cx).await;
 +    win.cx.run_until_parked();
 +    (win, id)
 +}
@@ -440,10 +440,10 @@ index 146ecc8..8050593 100644
 +#[path = "agent_jail_status_pause_tests.rs"]
 +mod pause;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 1bc61f3..28a6269 100644
+index 1529afe..95134a5 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -7024,19 +7024,50 @@ impl ThreadView {
+@@ -7115,19 +7115,50 @@ impl ThreadView {
              }
              agent_sandbox::control::stop_jail(pid).log_err();
          };
@@ -497,7 +497,7 @@ index 1bc61f3..28a6269 100644
          let paused_controls = match (record.paused, record.jail_pid) {
              (true, Some(pid)) => agent_sandbox::LaunchRegistry::get_with_id(
                  &self.agent_id,
-@@ -7045,13 +7076,14 @@ impl ThreadView {
+@@ -7136,13 +7167,14 @@ impl ThreadView {
              )
              .map(|(launch_id, _)| {
                  crate::agent_jail_status::render_jail_paused(

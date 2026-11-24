@@ -28,10 +28,10 @@ own tests (0072) and the other rfd_surfaces tests pass unchanged.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view/subagent_card/rfd_surfaces_tests.rs b/crates/agent_ui/src/conversation_view/subagent_card/rfd_surfaces_tests.rs
-index 48135a3..fc889bc 100644
+index 48135a3..54fc0a0 100644
 --- a/crates/agent_ui/src/conversation_view/subagent_card/rfd_surfaces_tests.rs
 +++ b/crates/agent_ui/src/conversation_view/subagent_card/rfd_surfaces_tests.rs
-@@ -482,3 +482,58 @@ fn waiting_card_full_screen_follows_the_latest_entries() {
+@@ -482,3 +482,59 @@ fn waiting_card_full_screen_follows_the_latest_entries() {
      );
      assert_eq!(card(SubagentStatus::Completed).fullscreen_entry(), Some(0));
  }
@@ -49,7 +49,7 @@ index 48135a3..fc889bc 100644
 +    let alpha_card = rig.message("to-alpha", "alpha", false);
 +    let _bravo_card = rig.message("to-bravo", "bravo", false);
 +
-+    rig.cx.update(|_, cx| {
++    let (_request_id, _outcome) = rig.cx.update(|_, cx| {
 +        alpha.update(cx, |thread, cx| {
 +            thread
 +                .request_tool_call_authorization_with_id(
@@ -74,7 +74,8 @@ index 48135a3..fc889bc 100644
 +        .debug_bounds(permission_row(alpha_card))
 +        .expect("Alpha is listed in the bar");
 +
-+    rig.cx.simulate_click(row.center(), gpui::Modifiers::default());
++    rig.cx
++        .simulate_click(row.center(), gpui::Modifiers::default());
 +    rig.cx.run_until_parked();
 +
 +    let shown = rig.panel.read_with(&rig.cx, |panel, cx| {
