@@ -31,6 +31,40 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.27.0_p20261123] — 2026-11-24
+
+Zeo `0.27.0_p20261123`: the operator's UI batch of 2026-11-23 (items 5, 6, 9, 10, 12, 15) on
+the same Zed `c31063a0`, `0169`-`0176`. The series is 170. Gates on bentoo-lab (operator's
+choice), project `zp-0270`: `test.sh --doc` 8859/8859 + 45 doctests, clippy `--all-targets`
+on test.sh's crates (only `claude_code_ide`'s four known lints), `verify.sh` and
+`check-sync.sh` after each registration with the prepared tree identical before and after
+the reorder; `0176` after that run, with its suites (11/11). GUI proofs on Xvfb here with a
+debug binary built on the lab: hub `docs/assets/zeo-batch-0270-2026-11-24`.
+
+- **Added** `0169` (default group, after `0167`, on `0115`): the `/btw` answer has a Copy button.
+- **Changed** `0170` (USE `ai-jail`, after `0168`, on `0057`): writable folders are chosen with
+  the folder picker, never typed.
+- **Added** `0171` (USE `ai-jail`, after `0170`, on `0141`): the jail page's restart notice has
+  a Restart Agent button; `agent_sandbox::restart_request` carries the ask to every
+  `ConversationView`, since `settings_ui` cannot reach the threads.
+- **Added** `0172` (default group, after `0169`) and `0173` (USE `ai-jail`, after `0171`): the
+  "Zeo" badge. Its two lists are kept by hand in `settings_ui/src/zeo_badge.rs`: **a patch that
+  adds a setting to one of Zed's pages, or a page of its own, adds it there**; the guard test
+  fails on a name the window no longer has. Split in two so USE `-ai-jail` keeps it green.
+- **Changed** `0174` (USE `ai-jail`, after `0173`, on `0165`): the open lock opens a small
+  modal (the project's switch and Advanced); `render_jail_status_button` gained `on_open`.
+- **Added** `0175` (USE `ai-jail`, after `0174`, on `0168`): a hidden-host jail is named
+  `desktop-xxxxxx` from a secret in `<data dir>/agent_sandbox/hostname.key` and the root,
+  through ai-jail 3.5.0-r6's `--hostname`; an older ai-jail keeps `ai-sandbox`, so `RDEPEND`
+  stays at `>=3.5.0-r5`. Adds `sha2` to `agent_sandbox` (one `Cargo.lock` line, no new crate).
+- **Fixed** `0176` (default group, after `0172`, on `0169`): the `/btw` answer takes the
+  thread's `text_ui` size; it inherited 1rem, 8/7 larger.
+
+Tooling note: the batch ran its tests through a scratch lab overlay
+(`run-test.sh` swapping `app-editors/zeo` in the builder image, which predates 0.26.0), not
+committed. **`lab` jobs run in podman on bentoo-lab**: check `podman ps` before starting one
+beside another session's; `docker` is not there and an absent command reads as an idle lab.
+
 ## [0.26.0_p20261123] — 2026-11-24
 
 Zeo `0.26.0_p20261123`: the series carried onto Zed `c31063a0` (2026-11-23, 23 commits past
