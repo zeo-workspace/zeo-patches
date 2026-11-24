@@ -141,7 +141,12 @@ cargo build --release --locked --package remote_server
 # a stray GGML_AVX512=ON or GGML_CPU_ALL_VARIANTS=ON would reach CMake.
 if ((voice)); then
 	shopt -s nullglob
-	caches=("${CARGO_TARGET_DIR}"/release/build/whisper-rs-sys-*/out/build/CMakeCache.txt)
+	# Cargo up to 1.99 named a build script's directory `<package>-<hash>`; 1.100 nests it as
+	# `<package>/<hash>` (zeo-bin 0.26.0 failed here on the new layout). Both are matched.
+	caches=(
+		"${CARGO_TARGET_DIR}"/release/build/whisper-rs-sys-*/out/build/CMakeCache.txt
+		"${CARGO_TARGET_DIR}"/release/build/whisper-rs-sys/*/out/build/CMakeCache.txt
+	)
 	shopt -u nullglob
 	if ((${#caches[@]} == 0)); then
 		echo "error: no whisper.cpp CMakeCache.txt under ${CARGO_TARGET_DIR}/release/build" >&2
@@ -188,8 +193,17 @@ fi
 # `compression` feature stores every asset deflated (a prompt template's text is
 # not in the binary either). The assets crate's dep-info is the compiler's own list
 # of the files it embedded, so the newest one must name licenses.md.
-assets_dep="$(find /work/target/release/deps -maxdepth 1 -name 'assets-*.d' -printf '%T@ %p\n' |
-	sort -n | tail -1 | cut -d' ' -f2-)"
+# Cargo up to 1.99 wrote it to release/deps/; 1.100 to release/build/assets/<hash>/out/
+# (zeo-bin 0.26.0 failed on the new layout). Both are searched, whichever exists.
+assets_dirs=()
+for dir in /work/target/release/deps /work/target/release/build/assets; do
+	[[ -d "${dir}" ]] && assets_dirs+=("${dir}")
+done
+assets_dep=""
+if ((${#assets_dirs[@]} > 0)); then
+	assets_dep="$(find "${assets_dirs[@]}" -maxdepth 3 -name 'assets-*.d' -printf '%T@ %p\n' |
+		sort -n | tail -1 | cut -d' ' -f2-)"
+fi
 if [[ -z "${assets_dep}" ]] || ! grep -q '/assets/licenses\.md' "${assets_dep}"; then
 	echo "error: assets/licenses.md is not embedded (no entry in ${assets_dep:-assets-*.d})" >&2
 	exit 1

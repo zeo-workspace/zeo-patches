@@ -62,6 +62,11 @@ offline; each new patch Red then Green.
   union resolution once dropped a closing brace in `0058` -- compile after every reorder, and
   compare the reordered tree with the pre-reorder backup tag. `test.sh` in series mode reads the
   patches of the main checkout, not of a bump worktree: fast-forward main before a series run.
+- **Tooling fix** (`release/portable/build-in-container.sh`): cargo 1.100 moved a package's
+  build output from `release/deps/` and `release/build/<package>-<hash>/` to
+  `release/build/<package>/<hash>/`, so the whisper.cpp CMakeCache check and the licenses.md
+  dep-info lookup found nothing and stopped zeo-bin 0.26.0's portable build. Both now look in
+  either layout.
 
 ## [0.25.0_p20261122] — 2026-11-23
 
