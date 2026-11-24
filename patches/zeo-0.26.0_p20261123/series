@@ -816,6 +816,9 @@
 # 0168: Hide the System Config -- /etc as an allowlist under the host view (ai-jail
 # --minimal-etc, 3.5.0-r5; operator, 2026-11-23). On 0161.
 0168-agent-sandbox-hide-the-system-config-etc-as-an-allowlist-under-the-hos.patch
+# 0170: writable folders are chosen with the folder picker, never typed (operator,
+# 2026-11-23). On 0057.
+0170-settings-ui-writable-folders-are-chosen-with-the-folder-picker-never-t.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
