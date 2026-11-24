@@ -66,6 +66,7 @@ isolation — the default run applies **every** patch, which is the strictest ca
 | `scripts/release-zeo-bin.sh <PF> [--fresh]` | the Gentoo-host `zeo-bin` build used up to `-r1`, unprivileged: compile and install under `release/configroot`, then `make-bin-release.sh` |
 | `scripts/make-bin-release.sh <PF> <builddir>` | package a finished `x86-64-v3` build of zeo as the `zeo-bin` distfile, with `PROVENANCE.txt`; refuses a non-portable binary and never uploads — see [Releasing zeo-bin](#releasing-zeo-bin) |
 | `scripts/patch-branches.sh <PF> [--force]` | rebuild one branch per patch in the prepared tree, so a patch can be fixed as code |
+| `scripts/i18n-check.py <tree>` | the translation ids of `crates/zeo_i18n` (patch 0177) against every `t!` call in a patched tree: missing, unused, variables that disagree, stale or foreign translations, an `.ftl` file `catalog.rs` does not embed; `test.sh` runs it before compiling |
 | `scripts/selftest.sh` | unit coverage, entirely on temporary fixtures — never touches the overlay or the real distfile |
 | `scripts/live-proof.py script <steps.json>` | drive a running Zed through the desktop portal and capture what a patch renders — the half `verify.sh` cannot answer |
 | `scripts/xvfb-proof.sh --steps <steps.json> [--dry-run] [--binary <path>] [--settings <f>] [--keymap <f>] [--keep <dir>]` | the same proof on a private `Xvfb` with an isolated Zeo — no consent dialog, and no input can reach the operator's desktop; see [Proving a patch in a running editor](#proving-a-patch-in-a-running-editor) |

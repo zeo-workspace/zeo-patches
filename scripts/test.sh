@@ -67,7 +67,7 @@ CRATES=(acp_thread agent agent_sandbox agent_servers agent_settings agent_tasks_
 	feature_flags icons install_cli markdown oauth_callback_server onboarding paths
 	project recent_projects release_channel remote remote_server reqwest_client settings
 	settings_content settings_ui sidebar title_bar ui voice_input workspace zed
-	zed_credentials_provider zeo_browser_host
+	zed_credentials_provider zeo_browser_host zeo_i18n
 	debugger_ui extensions_ui fs git inspector_ui language_model_selector language_models
 	language_tools node_runtime sandbox sandbox_linux secret_vault util zed_actions zlog)
 
@@ -183,6 +183,14 @@ main() {
 	) || die 2 "the offline rewrite failed"
 	grep -q "path = \"${workdir}/livekit" "${src}/Cargo.toml" || die 2 "the offline rewrite changed nothing"
 	mkdir -p "${src}/.git"
+
+	# Translation ids (0177) against the t! calls: seconds, so before the compile rather
+	# than behind it. A PF without crates/zeo_i18n has nothing to check.
+	if [[ -d "${src}/crates/zeo_i18n" ]]; then
+		step "i18n ids: scripts/i18n-check.py"
+		python3 -I "${ZP_REPO}/scripts/i18n-check.py" "${src}" ||
+			die 1 "translation ids and t! calls disagree -- see the lines above"
+	fi
 
 	# GGML_NATIVE and WHISPER_DONT_GENERATE_BINDINGS: whisper.cpp (0067) built the way the
 	# ebuild builds it -- no -march=native, and the bindings whisper-rs-sys bundles.

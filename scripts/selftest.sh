@@ -2903,6 +2903,17 @@ test_release_help_prints_whole_header() {
 # main [<filter>...] — run every case, or only those whose function name contains
 # ANY of the filters, each case once, in the order below. Filters that together
 # match nothing fail rather than reporting a green zero.
+test_i18n_check_unit_suite() {
+	case_start "i18n-check.py: its unit suite passes (scripts/i18n_check_test.py)"
+	local out status=0
+	out="$(python3 -I "${SCRIPTS}/i18n_check_test.py" 2>&1)" || status=$?
+	assert_status 0 "${status}" || {
+		printf '%s\n' "${out}" | tail -20
+		return
+	}
+	ok
+}
+
 main() {
 	local -a filters=("$@")
 	local t f ran=0 hit
@@ -2911,6 +2922,8 @@ main() {
 	fi
 
 	local tests=(
+		test_i18n_check_unit_suite
+
 		test_lib_resolves_commit
 		test_lib_rejects_ebuild_without_commit
 		test_lib_falls_back_to_default_distdir
