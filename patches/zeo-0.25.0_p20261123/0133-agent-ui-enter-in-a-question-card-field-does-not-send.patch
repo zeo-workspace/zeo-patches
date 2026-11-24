@@ -45,7 +45,7 @@ fields. Its second half -- Enter ignored while a submission is in flight
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 60b16f5..c1692c4 100644
+index eb59313..063aab7 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -8234,9 +8234,54 @@ pub(crate) mod tests {

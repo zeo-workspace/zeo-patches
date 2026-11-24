@@ -29,7 +29,7 @@ for an Xvfb capture.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index d2ac8d5..a866754 100644
+index b7fb3d1..3ba1cb4 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -12411,6 +12411,58 @@ pub(crate) mod tests {

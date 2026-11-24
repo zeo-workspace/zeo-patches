@@ -220,7 +220,7 @@ index 7c5a529..ca86e33 100644
              cancel_generation_on_terminal_stop: true,
              use_modifier_to_send: true,
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 8ce6b97..3ee0222 100644
+index f725d80..064ada3 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -4674,6 +4674,8 @@ pub(crate) mod tests {

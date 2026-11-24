@@ -866,7 +866,7 @@ index 889913d..f133ec3 100644
              auto_generate_thread_titles: true,
              max_idle_retained_threads: 5,
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index b8703c6..3790c64 100644
+index 0cb706a..3b21bfa 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -2166,21 +2166,30 @@ impl ConversationView {

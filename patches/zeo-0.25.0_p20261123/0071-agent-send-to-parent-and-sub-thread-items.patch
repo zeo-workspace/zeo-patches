@@ -5733,7 +5733,7 @@ index 6bdf18e..51775aa 100644
  pub use crate::thread_metadata_store::ThreadId;
  pub use agent_diff::{AgentDiffPane, AgentDiffToolbar};
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 8dc6d8f..d2ac8d5 100644
+index 6d71f76..b7fb3d1 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -2173,6 +2173,20 @@ impl ConversationView {

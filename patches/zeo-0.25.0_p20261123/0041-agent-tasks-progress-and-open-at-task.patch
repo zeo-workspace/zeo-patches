@@ -2329,7 +2329,7 @@ index 0000000..2768aa8
 +    assert_eq!(scroll_top(&a.panel, &mut a.cx), start);
 +}
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index d8bcc5f..51f50f0 100644
+index 252db29..8a755b5 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -1001,6 +1001,23 @@ impl ConversationView {

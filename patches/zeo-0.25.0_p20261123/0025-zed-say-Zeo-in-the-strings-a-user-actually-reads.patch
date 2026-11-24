@@ -125,7 +125,7 @@ index 4fcb56b..f1cfb94 100644
              ))),
          }
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 729dc1c..17f6f61 100644
+index 729dc1c..73f6079 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -3479,7 +3479,7 @@ impl ConversationView {
@@ -137,6 +137,15 @@ index 729dc1c..17f6f61 100644
              if version.is_empty() {
                  format!(
                      "Currently using {}, which does not report a valid --version",
+@@ -4184,7 +4184,7 @@ impl Render for ConversationView {
+                         .flex_wrap()
+                         .when(unconfirmed, |this| this.child(
+                             div().debug_selector(|| "saved-input-outcome-unknown".into())
+-                                .child(Label::new("Some messages were not confirmed. The agent may already have acted on them. Zed has not sent them again.").size(LabelSize::Small))
++                                .child(Label::new("Some messages were not confirmed. The agent may already have acted on them. Zeo has not sent them again.").size(LabelSize::Small))
+                         ))
+                         .child(self.copy_saved_input_button(cx))
+                         .when(
 diff --git a/crates/agent_ui/src/thread_import.rs b/crates/agent_ui/src/thread_import.rs
 index cc11927..6f9e7d0 100644
 --- a/crates/agent_ui/src/thread_import.rs

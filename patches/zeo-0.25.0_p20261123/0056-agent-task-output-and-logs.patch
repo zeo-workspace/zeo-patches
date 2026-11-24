@@ -3434,7 +3434,7 @@ index 714254c..bd53f1f 100644
  
  pub const DEFAULT_THREAD_TITLE: &str = "New Agent Thread";
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 51f50f0..9a9f88b 100644
+index 8a755b5..36d4dcc 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -2885,6 +2885,19 @@ impl ConversationView {

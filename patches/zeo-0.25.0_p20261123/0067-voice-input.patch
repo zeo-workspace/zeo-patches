@@ -560,7 +560,7 @@ index a4b141b..ab5055c 100644
  mod slash_command_in_code_block_tests;
  
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 174a4d7..717b00a 100644
+index 33c0f68..fb33d9a 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -115,7 +115,7 @@ mod session_stats;

@@ -312,7 +312,7 @@ index dc596f9..80cdc37 100644
              | AcpThreadEvent::SubagentSpawned(_)
              | AcpThreadEvent::SubagentAssociationUpdated
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 6e00063..a55790d 100644
+index 2687850..2bde649 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -350,6 +350,7 @@ impl Conversation {

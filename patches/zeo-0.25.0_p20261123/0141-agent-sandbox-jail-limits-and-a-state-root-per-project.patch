@@ -2591,7 +2591,7 @@ index 58cf640..d33d8cd 100644
  mod agent_panel;
  mod agent_registry_ui;
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index c1692c4..3cc5894 100644
+index 063aab7..1c05045 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -1352,7 +1352,44 @@ impl ConversationView {

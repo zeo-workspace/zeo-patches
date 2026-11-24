@@ -61,7 +61,7 @@ WaitingForAnswer instead: a question waits for an answer, not for a permission.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index a55790d..6807c65 100644
+index 2bde649..942495d 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -309,6 +309,22 @@ impl Conversation {

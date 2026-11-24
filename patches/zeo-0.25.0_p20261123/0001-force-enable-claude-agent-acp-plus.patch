@@ -177,6 +177,17 @@ the settings withdraws both offers at the next connection.
 Zeo 0.16.0_p20261119 (Zed 7279c76e): acp_beta_connect_tests hands
 connect() a ResolvedAgentServerCommand without an installation lease,
 the type upstream 07278edd gave it.
+
+SUBAGENTS AND PLAN ARE STABLE UPSTREAM (Zed c31063a0, 2026-11-23)
+
+Upstream d3bba51492 (zed#67291, agent-client-protocol 5.5.1, schema 1.21.2)
+made both capabilities stable: crates/agent_servers/src/acp/v1.rs:550-551 now
+offers clientCapabilities.subagents and .plan to every v1 agent, whatever
+acp-beta says. So the two paragraphs above that say turning the flag off
+withdraws the subagents and plan offers no longer hold. What acp-beta still
+decides is the protocol: off, the next connection is one v1 initialize with no
+v2 attempt. acp_beta_connect_tests now expects the subagents offer with the
+flag off, and its test is renamed connect_with_acp_beta_off_offers_v1_only.
 ---
 
 diff --git a/crates/agent_servers/src/acp.rs b/crates/agent_servers/src/acp.rs

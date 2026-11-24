@@ -42,7 +42,7 @@ upstream's shape.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index a866754..0c395ec 100644
+index 3ba1cb4..accc243 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -10896,7 +10896,7 @@ pub(crate) mod tests {
