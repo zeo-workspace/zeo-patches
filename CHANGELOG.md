@@ -31,6 +31,38 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.26.0_p20261123] — 2026-11-24
+
+Zeo `0.26.0_p20261123`: the series carried onto Zed `c31063a0` (2026-11-23, 23 commits past
+`f126950f`, record `/var/tmp/zp-bump1123-PROGRESS.md`), plus `0164`-`0168`. The series is 162.
+Gates, local by the operator's choice (32 cores): `test.sh --doc` over the whole series,
+clippy `--all-targets` on test.sh's crates (only `claude_code_ide`'s four known lints),
+rustfmt on the batch's files, `verify.sh` 162/162, `check-sync.sh` in sync, `ebuild prepare`
+offline; each new patch Red then Green.
+
+- **Bump**: refresh conflicted at `0024` (upstream #67367 `trim_prefix`), so the series was
+  cherry-picked onto the new baseline. Behaviour resolutions: `0011` and `0089` read the quota
+  from `usage_meta`, which upstream's v1 handler now stores itself (no test covers the v2 path);
+  `0034`/`0072` keep upstream's new `Idle` (only `EndTurn` is Completed on the card); `0001`'s
+  tests follow zed#67291, which made the subagents and plan offers stable (dated note in its
+  header); `0135` keeps its switch menu and renders upstream's Markdown descriptions. `CRATES`:
+  `agent-client-protocol`/`-derive` 5.5.1, `-schema` 1.21.2.
+- **Changed** `0025`: upstream's new "Zed has not sent them again." says Zeo.
+- **Added** `0164` (default group, after `0156`, on `0072`): a row of Subagents Awaiting
+  Permission opens the waiting subagent's thread.
+- **Added** `0165` (USE `ai-jail`, after `0163`, on `0141`): Pause freezes the jail through its
+  systemd scope and Resume goes on; Stop asks first.
+- **Added** `0166` (default group, after `0164`, on `0072`): Stop Generation and Stop Subagent
+  confirm in a modal.
+- **Added** `0167` (default group, after `0166`, on `0029`/`0072`): archiving a thread with work
+  running asks instead of refusing.
+- **Added** `0168` (USE `ai-jail`, after `0165`, on `0161`): Hide the System Config, ai-jail's
+  `--minimal-etc`; the ebuild's ai-jail `RDEPEND` moves to `>=3.5.0-r5`.
+- **Tooling note**: reordering commits to the series' order (`order-todo.py`) can conflict, and a
+  union resolution once dropped a closing brace in `0058` -- compile after every reorder, and
+  compare the reordered tree with the pre-reorder backup tag. `test.sh` in series mode reads the
+  patches of the main checkout, not of a bump worktree: fast-forward main before a series run.
+
 ## [0.25.0_p20261122] — 2026-11-23
 
 Zeo `0.25.0_p20261122`: 0.24.0 plus `0162` (the vault's first slice, hub
