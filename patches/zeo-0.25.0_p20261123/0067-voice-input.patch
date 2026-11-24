@@ -573,7 +573,7 @@ index a46377d..b551dff 100644
  pub use thread_view::*;
  
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 2066da1..b2e7915 100644
+index ae6ba62..052092e 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -28,12 +28,22 @@ use sandbox::{SandboxFsPolicy, SandboxNetPolicy, SandboxPolicy};
@@ -642,7 +642,7 @@ index 2066da1..b2e7915 100644
          let list_state_for_scroll = this.list_state.clone();
          let thread_view = cx.entity().downgrade();
  
-@@ -6389,6 +6421,25 @@ impl ThreadView {
+@@ -6391,6 +6423,25 @@ impl ThreadView {
          let has_messages = self.has_visible_conversation(cx);
          let fills_container = !has_messages || editor_expanded;
          let composer_is_read_only = self.message_editor.read(cx).editor().read(cx).read_only(cx);
@@ -668,7 +668,7 @@ index 2066da1..b2e7915 100644
          let send_to_parent = self.render_send_to_parent(window, cx);
          let discard_draft_button = composer_is_read_only.then(|| {
              div()
-@@ -6402,6 +6453,7 @@ impl ThreadView {
+@@ -6404,6 +6455,7 @@ impl ThreadView {
                                  editor.set_read_only(false, cx);
                                  editor.set_message(Vec::new(), window, cx);
                              });
@@ -676,7 +676,7 @@ index 2066da1..b2e7915 100644
                              this.clear_thread_error(cx);
                          })),
                  )
-@@ -6435,6 +6487,7 @@ impl ThreadView {
+@@ -6437,6 +6489,7 @@ impl ThreadView {
                      .flex_grow_0()
                      .justify_between()
                      .gap_2()
@@ -684,7 +684,7 @@ index 2066da1..b2e7915 100644
                      .children(send_to_parent)
                      .child(
                          v_flex()
-@@ -6519,6 +6572,7 @@ impl ThreadView {
+@@ -6521,6 +6574,7 @@ impl ThreadView {
                                              .children(self.mode_selector.clone())
                                              .children(self.model_selector.clone()),
                                      })
@@ -692,7 +692,7 @@ index 2066da1..b2e7915 100644
                                      .child(self.render_send_button(cx)),
                              ),
                      ),
-@@ -10186,6 +10240,259 @@ impl ThreadView {
+@@ -10188,6 +10242,259 @@ impl ThreadView {
          self.message_editor.read(cx).set_local_commands(commands);
      }
  
@@ -952,7 +952,7 @@ index 2066da1..b2e7915 100644
      /// Mirrors the conversation's pending question into the composer's key
      /// context. Read on every render rather than on the elicitation events, so
      /// every way a question ends -- answered, declined, cancelled, the turn
-@@ -16347,6 +16654,8 @@ impl Render for ThreadView {
+@@ -16349,6 +16656,8 @@ impl Render for ThreadView {
          // renders (settings, connection state, feature flags).
          self.sync_local_commands(cx);
          self.sync_question_pending(cx);
@@ -961,7 +961,7 @@ index 2066da1..b2e7915 100644
  
          let has_messages = self.has_visible_conversation(cx);
          let list_state = self.list_state.clone();
-@@ -16372,8 +16681,19 @@ impl Render for ThreadView {
+@@ -16374,8 +16683,19 @@ impl Render for ThreadView {
              });
  
          v_flex()

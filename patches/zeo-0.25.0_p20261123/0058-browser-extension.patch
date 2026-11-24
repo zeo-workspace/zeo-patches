@@ -7174,7 +7174,7 @@ index 24c5804..a46377d 100644
      selection: Option<&thread_view::PermissionSelection>,
      is_allow: bool,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 95134a5..b986f2f 100644
+index 95134a5..8e9d1f1 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -1587,7 +1587,7 @@ impl ThreadView {
@@ -7427,10 +7427,10 @@ index 95134a5..b986f2f 100644
  
          let agent_telemetry_id = self.thread.read(cx).connection().telemetry_id();
          let session_id = self.thread.read(cx).session_id().clone();
-@@ -2954,6 +2979,97 @@ impl ThreadView {
-                 this.cancel_thread(&thread, cx).detach();
-             },
+@@ -2956,6 +2981,99 @@ impl ThreadView {
          );
+     }
+ 
 +    /// The kind, ACP error code and plain-text message of `error`.
 +    fn thread_error_summary(
 +        &self,
@@ -7522,10 +7522,12 @@ index 95134a5..b986f2f 100644
 +                message,
 +            } => ("other", acp_error_code.clone(), message.clone()),
 +        }
-     }
- 
++    }
++
      pub fn cancel_generation(&mut self, cx: &mut Context<Self>) {
-@@ -16818,6 +16934,7 @@ pub(crate) fn open_link(
+         self.thread_retry_status.take();
+         self.thread_error.take();
+@@ -16818,6 +16936,7 @@ pub(crate) fn open_link(
              MentionUri::TerminalSelection { .. } => {}
              MentionUri::GitDiff { .. } => {}
              MentionUri::MergeConflict { .. } => {}
