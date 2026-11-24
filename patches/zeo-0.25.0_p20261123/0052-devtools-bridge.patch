@@ -693,10 +693,10 @@ index ba3ec85..816998f 100644
  mod tests {
      use super::*;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index bf381de..5947313 100644
+index 5956b74..0323aca 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -16510,6 +16510,20 @@ pub(crate) fn open_link(
+@@ -16535,6 +16535,20 @@ pub(crate) fn open_link(
                  );
              }
              MentionUri::Selection { abs_path: None, .. } => {}

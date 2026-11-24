@@ -734,6 +734,9 @@
 # 0156: the tasks card's Open turns into Back (Exit icon) while the task's own thread is on
 # screen, and the eye's preview sits on the agent panel's background (operator, 2026-11-22).
 0156-agent-ui-the-tasks-card-s-open-turns-into-back-and-the-eye-s-content-s.patch
+# 0164: a row of Subagents Awaiting Permission opens the waiting subagent's own thread
+# instead of only scrolling to its card (operator, 2026-11-23). On 0072.
+0164-agent-ui-a-row-of-subagents-awaiting-permission-opens-that-subagent-s.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch

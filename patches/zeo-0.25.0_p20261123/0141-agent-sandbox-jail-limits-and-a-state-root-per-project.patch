@@ -2673,10 +2673,10 @@ index 063aab7..1c05045 100644
                                  login,
                                  workspace,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index e738559..0f1e97c 100644
+index ffcd3a4..893aef0 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -6983,10 +6983,55 @@ impl ThreadView {
+@@ -7008,10 +7008,55 @@ impl ThreadView {
          );
          let summary =
              crate::agent_jail_status::jail_status_summary(&record, drifted).with_pending(pending);
@@ -2734,7 +2734,7 @@ index e738559..0f1e97c 100644
      }
  
      /// Restarts the agent so a changed sandbox setting applies (§6.50). The thread is resumed
-@@ -6999,7 +7044,7 @@ impl ThreadView {
+@@ -7024,7 +7069,7 @@ impl ThreadView {
              log::info!("agent_sandbox event=restart_for_jail generating={generating}");
              if !generating {
                  server_view
@@ -2743,7 +2743,7 @@ index e738559..0f1e97c 100644
                      .log_err();
                  return;
              }
-@@ -7015,7 +7060,7 @@ impl ThreadView {
+@@ -7040,7 +7085,7 @@ impl ThreadView {
                  .spawn(cx, async move |cx| {
                      if answer.await == Ok(0) {
                          server_view

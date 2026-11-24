@@ -13865,10 +13865,10 @@ index 816998f..58cf640 100644
  mod devtools_delivery_tests;
  
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 5947313..e738559 100644
+index 0323aca..ffcd3a4 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -6961,6 +6961,68 @@ impl ThreadView {
+@@ -6986,6 +6986,68 @@ impl ThreadView {
          )
      }
  

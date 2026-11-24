@@ -21,10 +21,10 @@ proven only by an Xvfb capture, which has not been taken.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 9a24b65..7c6f333 100644
+index 95680e2..4cfe1d0 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -6441,7 +6441,11 @@ impl ThreadView {
+@@ -6466,7 +6466,11 @@ impl ThreadView {
                                          None => this
                                              .children(self.render_fast_mode_control(cx))
                                              .children(self.render_thinking_control(cx)),
@@ -37,7 +37,7 @@ index 9a24b65..7c6f333 100644
                              )
                              .child(
                                  h_flex()
-@@ -6458,7 +6462,6 @@ impl ThreadView {
+@@ -6483,7 +6487,6 @@ impl ThreadView {
                                              .children(self.mode_selector.clone())
                                              .children(self.model_selector.clone()),
                                      })
