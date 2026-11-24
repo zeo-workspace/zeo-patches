@@ -67,6 +67,11 @@ offline; each new patch Red then Green.
   `release/build/<package>/<hash>/`, so the whisper.cpp CMakeCache check and the licenses.md
   dep-info lookup found nothing and stopped zeo-bin 0.26.0's portable build. Both now look in
   either layout.
+- **Tooling change** (`release/windows/build.ps1`): sccache is off in the Windows guest. gpui's
+  rustc line passed Windows' 32 767-character limit and sccache 0.18 spawned rustc with the whole
+  line (os error 206); cargo retries such a line through an @argfile on its own. The guest runs
+  rustc 1.98.1, so cargo 1.100's layout is not the cause; what lengthened the line was not
+  measured. Without the wrapper the Windows build compiled 0.26.0 from scratch in 22 minutes.
 
 ## [0.25.0_p20261122] — 2026-11-23
 

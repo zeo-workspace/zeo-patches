@@ -135,7 +135,15 @@ New-Item -ItemType Directory -Path $sccacheRoot | Out-Null
 tar.exe -xf $pinned['sccache-v0.18.0-x86_64-pc-windows-msvc.zip'] -C $sccacheRoot
 $sccache = Join-Path $sccacheRoot 'sccache-v0.18.0-x86_64-pc-windows-msvc\sccache.exe'
 if (-not (Test-Path $sccache)) { throw "build event=sccache-layout file=$sccache" }
-$env:RUSTC_WRAPPER = $sccache
+# Off since zeo-bin 0.26.0 (Zed c31063a0, the guest's rustc 1.98.1): gpui's rustc command line
+# passed Windows' 32 767-character limit and sccache 0.18, which spawns rustc behind the wrapper,
+# failed with "The filename or extension is too long. (os error 206)". Cargo retries such a line
+# through an @argfile on its own, which is why the build passes without the wrapper. What made the
+# line that long was not measured (the failed run's log was overwritten). Without the wrapper the
+# build is a full compile per version (0.26.0: 22 minutes); turn it back on once a build with it
+# passes, or once sccache passes the argfile through.
+$useSccache = $false
+if ($useSccache) { $env:RUSTC_WRAPPER = $sccache }
 $env:SCCACHE_DIR = 'C:\zeo\sccache'
 if (-not $env:SCCACHE_CACHE_SIZE) { $env:SCCACHE_CACHE_SIZE = '30G' }
 # 0: the server never stops on its own. Its default 600 s idle timeout ended it during the final
