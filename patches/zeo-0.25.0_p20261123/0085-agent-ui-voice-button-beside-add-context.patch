@@ -21,7 +21,7 @@ proven only by an Xvfb capture, which has not been taken.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 95680e2..4cfe1d0 100644
+index 03a26e8..ed3ab62 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -6466,7 +6466,11 @@ impl ThreadView {

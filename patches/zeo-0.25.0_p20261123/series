@@ -802,6 +802,9 @@
 # 0163: Hide the Disks (overlay_system) on by default -- a build measured no cost; the default is
 # skipped on an ai-jail without --overlay-system, a project's own choice still refuses. On 0162.
 0163-agent-sandbox-hide-the-disks-on-by-default-skipped-on-an-older-ai-jail.patch
+# 0165: Pause freezes the jail (cgroup.freeze) and Resume goes on with nothing lost; Stop
+# asks first (operator, 2026-11-23). On 0141.
+0165-agent-sandbox-pause-freezes-the-jail-and-resume-goes-on-stop-asks-firs.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

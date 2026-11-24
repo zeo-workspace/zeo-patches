@@ -573,7 +573,7 @@ index 33c0f68..fb33d9a 100644
  pub use thread_view::*;
  
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index c67a6a2..95680e2 100644
+index 49ec03b..03a26e8 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -28,12 +28,22 @@ use sandbox::{SandboxFsPolicy, SandboxNetPolicy, SandboxPolicy};
@@ -692,7 +692,7 @@ index c67a6a2..95680e2 100644
                                      .child(self.render_send_button(cx)),
                              ),
                      ),
-@@ -10063,6 +10117,259 @@ impl ThreadView {
+@@ -10095,6 +10149,259 @@ impl ThreadView {
          self.message_editor.read(cx).set_local_commands(commands);
      }
  
@@ -952,7 +952,7 @@ index c67a6a2..95680e2 100644
      /// Mirrors the conversation's pending question into the composer's key
      /// context. Read on every render rather than on the elicitation events, so
      /// every way a question ends -- answered, declined, cancelled, the turn
-@@ -16221,6 +16528,8 @@ impl Render for ThreadView {
+@@ -16253,6 +16560,8 @@ impl Render for ThreadView {
          // renders (settings, connection state, feature flags).
          self.sync_local_commands(cx);
          self.sync_question_pending(cx);
@@ -961,7 +961,7 @@ index c67a6a2..95680e2 100644
  
          let has_messages = self.has_visible_conversation(cx);
          let list_state = self.list_state.clone();
-@@ -16246,8 +16555,19 @@ impl Render for ThreadView {
+@@ -16278,8 +16587,19 @@ impl Render for ThreadView {
              });
  
          v_flex()
