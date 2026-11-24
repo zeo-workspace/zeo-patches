@@ -745,6 +745,9 @@
 0167-sidebar-archiving-a-thread-with-work-running-asks-first-instead-of-ref.patch
 # 0169: the /btw answer has a Copy button (operator, 2026-11-23). On 0115.
 0169-agent-ui-the-btw-answer-has-a-copy-button.patch
+# 0172: a "Zeo" badge beside each setting Zeo added to Zed's pages, and on the link and
+# title of a page of its own (operator, 2026-11-23/24). On 0110, 0111, 0125, 0126, 0149, 0151.
+0172-settings-ui-a-zeo-badge-marks-the-settings-and-pages-zeo-added.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -819,6 +822,18 @@
 # 0170: writable folders are chosen with the folder picker, never typed (operator,
 # 2026-11-23). On 0057.
 0170-settings-ui-writable-folders-are-chosen-with-the-folder-picker-never-t.patch
+# 0171: the jail's "Restart the agent to apply." notice gets a Restart Agent button that
+# restarts the project's drifted agents (operator, 2026-11-23). On 0170 and 0141.
+0171-settings-ui-the-jail-s-restart-notice-has-a-restart-agent-button.patch
+# 0173: the jail's pages (Agent Sandbox, Agent Memory, Secrets) carry 0172's badge. On 0172.
+0173-settings-ui-the-jail-s-pages-carry-the-zeo-badge-too.patch
+# 0174: the open lock opens a small modal -- this project's jail switch and Advanced --
+# instead of the whole page (operator, 2026-11-23/24). On 0165 and 0171.
+0174-agent-ui-the-open-lock-opens-a-small-modal-the-switch-and-advanced.patch
+# 0175: a jail that hides the host is named for its project -- desktop- and six characters
+# from a local secret and the root (ai-jail 3.5.0-r6 --hostname; operator, 2026-11-23/24).
+# On 0168.
+0175-agent-sandbox-a-jail-that-hides-the-host-is-named-for-its-project.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
