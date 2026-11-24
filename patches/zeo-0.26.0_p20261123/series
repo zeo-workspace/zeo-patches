@@ -743,6 +743,8 @@
 # 0167: archiving a thread with work running asks first instead of refusing (operator,
 # 2026-11-23). On 0029/0072.
 0167-sidebar-archiving-a-thread-with-work-running-asks-first-instead-of-ref.patch
+# 0169: the /btw answer has a Copy button (operator, 2026-11-23). On 0115.
+0169-agent-ui-the-btw-answer-has-a-copy-button.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
