@@ -7161,7 +7161,7 @@ index 0000000..fb36f80
 +    assert_eq!(decoded, msg);
 +}
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 9a11454..b40fa01 100644
+index 7c6e2c6..70925d9 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -753,7 +753,7 @@ pub struct StateChange;

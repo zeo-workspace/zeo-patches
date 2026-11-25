@@ -252,7 +252,7 @@ index f27e1fd..3e1b75c 100644
                                          this.child(
                                              Icon::new(IconName::Check)
 diff --git a/crates/agent_ui/src/model_selector.rs b/crates/agent_ui/src/model_selector.rs
-index c2aa308..e7ffecb 100644
+index 801c040..cd8a84b 100644
 --- a/crates/agent_ui/src/model_selector.rs
 +++ b/crates/agent_ui/src/model_selector.rs
 @@ -323,8 +323,6 @@ impl PickerDelegate for ModelPickerDelegate {
@@ -273,7 +273,7 @@ index c2aa308..e7ffecb 100644
                                  .is_latest(model_info.is_latest)
                                  .is_favorite(is_favorite)
 diff --git a/crates/agent_ui/src/profile_selector.rs b/crates/agent_ui/src/profile_selector.rs
-index 8d761b6..9211238 100644
+index a8079fe..92a8183 100644
 --- a/crates/agent_ui/src/profile_selector.rs
 +++ b/crates/agent_ui/src/profile_selector.rs
 @@ -1,4 +1,4 @@

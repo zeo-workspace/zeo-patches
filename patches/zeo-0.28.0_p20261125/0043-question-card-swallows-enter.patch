@@ -190,7 +190,7 @@ index 01a0051..2cfd81d 100644
              filter.show_action_types(skill_creator_actions.iter());
          } else {
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index a38dbe8..29e8590 100644
+index d31c18a..fdf830a 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -8301,9 +8301,6 @@ pub(crate) mod tests {

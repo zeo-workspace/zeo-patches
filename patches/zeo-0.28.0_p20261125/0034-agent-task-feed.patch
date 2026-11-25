@@ -3123,7 +3123,7 @@ index fed3693..bc8b51d 100644
      async fn test_cleanup_retained_threads_preserves_idle_non_loadable_threads(
          cx: &mut TestAppContext,
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 59200e6..c845e04 100644
+index 771bfee..6463b76 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -375,6 +375,8 @@ impl Conversation {

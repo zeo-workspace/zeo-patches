@@ -134,7 +134,7 @@ index bfab197..fe11332 100644
              Task::ready(Ok(()))
          }
 diff --git a/crates/agent/src/agent.rs b/crates/agent/src/agent.rs
-index b6ff118..bad5880 100644
+index b6ff118..c392e31 100644
 --- a/crates/agent/src/agent.rs
 +++ b/crates/agent/src/agent.rs
 @@ -3053,7 +3053,12 @@ impl acp_thread::AgentModelSelector for NativeAgentModelSelector {
@@ -436,17 +436,21 @@ index b6ff118..bad5880 100644
              .await
              .unwrap();
          thread.read_with(cx, |thread, _| {
-@@ -9667,7 +9798,9 @@ mod internal_tests {
+@@ -9667,9 +9798,11 @@ mod internal_tests {
          let session_id = acp_thread.read_with(cx, |thread, _| thread.session_id().clone());
          let thread = cx.update(|cx| native_thread_for_session(&agent, &session_id, cx));
          let selector = connection.model_selector(&session_id).unwrap();
 -        cx.update(|cx| selector.select_model(AgentModelId::new("zed.dev/claude-opus-4-6"), cx))
+-            .await
+-            .unwrap();
 +        cx.update(|cx| {
 +            selector.select_model(AgentModelId::new("zed.dev/claude-opus-4-6"), false, cx)
 +        })
-             .await
-             .unwrap();
++        .await
++        .unwrap();
          let profile_id = agent_settings::AgentProfileId("saved-claude".into());
+         cx.update(|cx| {
+             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
 @@ -9748,7 +9881,7 @@ mod internal_tests {
                  .flatten()
                  .any(|model| model.id.as_ref() == "zed.dev/claude-opus-4-6")
@@ -904,7 +908,7 @@ index 3bb1628..11fd525 100644
  
      #[gpui::test]
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index a2d58c1..9943ae1 100644
+index a2d58c1..f3eac8e 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -279,13 +279,12 @@ impl ProfileProvider for Entity<agent::Thread> {
@@ -1012,6 +1016,32 @@ index a2d58c1..9943ae1 100644
          });
          cx.run_until_parked();
  
+@@ -5046,7 +5045,10 @@ pub(crate) mod tests {
+     }
+ 
+     #[gpui::test]
+-    async fn test_secondary_confirm_in_selectors_makes_thread_thread_only(cx: &mut TestAppContext) {
++    // Zeo (0010, operator decision over #66869): a secondary confirm is a plain
++    // pick -- this thread only, nothing saved -- and never makes the thread
++    // thread-only; Shift is what saves a default.
++    async fn test_secondary_confirm_in_selectors_is_a_plain_pick(cx: &mut TestAppContext) {
+         use settings::KeybindSource;
+ 
+         fn bind_keymap(path: &'static str, source: KeybindSource, cx: &mut App) {
+@@ -5175,12 +5177,9 @@ pub(crate) mod tests {
+ 
+                 let case = format!("{selector} selector, {default_keymap}, {jetbrains_keymap:?}");
+                 let thread_only = native_thread.read_with(cx, |thread, _| thread.is_thread_only());
+-                assert!(thread_only, "{case}");
++                assert!(!thread_only, "{case}");
+                 let settings = settings_fs.load(paths::settings_file()).await.unwrap();
+                 assert_eq!(settings, saved_settings, "{case}");
+-
+-                native_thread.update(cx, |thread, cx| thread.reset_to_defaults(cx));
+-                assert!(!native_thread.read_with(cx, |thread, _cx| thread.is_thread_only()));
+             }
+         }
+     }
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
 index 59619e7..28f45c0 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
@@ -1426,7 +1456,7 @@ index 38e292e..f27e1fd 100644
      struct TestAgentServer {
          saved_defaults: Arc<Mutex<Vec<Option<acp::SessionConfigValueId>>>>,
 diff --git a/crates/agent_ui/src/model_selector.rs b/crates/agent_ui/src/model_selector.rs
-index cf0e56f..c2aa308 100644
+index cf0e56f..801c040 100644
 --- a/crates/agent_ui/src/model_selector.rs
 +++ b/crates/agent_ui/src/model_selector.rs
 @@ -20,6 +20,7 @@ use util::ResultExt;
@@ -1517,16 +1547,18 @@ index cf0e56f..c2aa308 100644
      }
  }
  
-@@ -579,7 +592,7 @@ mod tests {
+@@ -579,9 +592,7 @@ mod tests {
      }
  
      #[gpui::test]
 -    fn confirming_model_selects_it_and_secondary_makes_the_thread_thread_only(
-+    fn confirming_model_selects_it_and_secondary_is_a_plain_pick(
-         cx: &mut TestAppContext,
-     ) {
+-        cx: &mut TestAppContext,
+-    ) {
++    fn confirming_model_selects_it_and_secondary_is_a_plain_pick(cx: &mut TestAppContext) {
          cx.update(|cx| {
-@@ -601,7 +614,7 @@ mod tests {
+             let settings_store = settings::SettingsStore::test(cx);
+             cx.set_global(settings_store);
+@@ -601,7 +612,7 @@ mod tests {
          cx.run_until_parked();
  
          let mut cx = VisualTestContext::from_window(window_handle.into(), cx);
@@ -1535,7 +1567,7 @@ index cf0e56f..c2aa308 100644
              window_handle
                  .update(&mut cx, |picker, window, cx| {
                      picker.delegate.set_selected_index(1, window, cx);
-@@ -737,7 +750,12 @@ mod tests {
+@@ -737,7 +748,12 @@ mod tests {
              Task::ready(Ok(AgentModelList::Flat(self.models.clone())))
          }
  
@@ -1550,7 +1582,7 @@ index cf0e56f..c2aa308 100644
              if let Some(model) = self.models.iter().find(|model| model.id == model_id) {
                  *self.selected_model.borrow_mut() = model.clone();
 diff --git a/crates/agent_ui/src/profile_selector.rs b/crates/agent_ui/src/profile_selector.rs
-index 7c3f6ff..8d761b6 100644
+index 7c3f6ff..a8079fe 100644
 --- a/crates/agent_ui/src/profile_selector.rs
 +++ b/crates/agent_ui/src/profile_selector.rs
 @@ -1,3 +1,4 @@
@@ -1625,12 +1657,13 @@ index 7c3f6ff..8d761b6 100644
                  .child(
                      h_flex()
                          .w_full()
-@@ -1063,6 +1070,6 @@ mod tests {
+@@ -1063,6 +1070,7 @@ mod tests {
              self.has_model
          }
  
 -        fn pick_profile(&self, _profile_id: AgentProfileId, _thread_only: bool, _cx: &mut App) {}
-+        fn pick_profile(&self, _profile_id: AgentProfileId, _persist_default: bool, _cx: &mut App) {}
++        fn pick_profile(&self, _profile_id: AgentProfileId, _persist_default: bool, _cx: &mut App) {
++        }
      }
  }
 diff --git a/crates/agent_ui/src/set_as_default.rs b/crates/agent_ui/src/set_as_default.rs

@@ -2657,7 +2657,7 @@ index 3e9231b..107b9b4 100644
  mod tasks_card;
  mod terminal_codegen;
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index d098c9c..bb87a00 100644
+index acaf9ee..186a223 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -111,6 +111,7 @@ pub(crate) mod elicitation;

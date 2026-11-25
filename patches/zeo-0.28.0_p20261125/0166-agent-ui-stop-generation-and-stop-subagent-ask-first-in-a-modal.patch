@@ -40,7 +40,7 @@ Red: all four fail without the change. agent_ui suite 2124/2124 with 0167.
 ---
 
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 8c07a33..9139c40 100644
+index 3b97c91..8cf4e35 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -17252,11 +17252,55 @@ pub(crate) mod tests {

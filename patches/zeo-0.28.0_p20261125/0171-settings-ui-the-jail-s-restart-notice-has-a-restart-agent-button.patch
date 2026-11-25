@@ -164,7 +164,7 @@ index 0000000..305c873
 +    assert_eq!(seen.get(), second);
 +}
 diff --git a/crates/agent_ui/src/conversation_view.rs b/crates/agent_ui/src/conversation_view.rs
-index 6475d07..9a11454 100644
+index 145d2b0..7c6e2c6 100644
 --- a/crates/agent_ui/src/conversation_view.rs
 +++ b/crates/agent_ui/src/conversation_view.rs
 @@ -1208,6 +1208,7 @@ impl ConversationView {
