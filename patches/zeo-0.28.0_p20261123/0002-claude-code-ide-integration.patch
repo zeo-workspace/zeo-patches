@@ -89,6 +89,13 @@ Protocol alignment with the VS Code extension (story 066, 2026-11-03, CLI 2.1.31
   `saved: false`, sees a change, and -- unless its terminal prompt was answered
   first -- takes it as an approval and writes the edit. Closing the tab
   approved the change.
+- A request that ends without an answer closes its tab (2026-11-25, parity
+  round 26, item 237), as the VS Code extension does (2.1.329, 2.1.331): an
+  `openDiff` dropped because the CLI disconnected, or stopped by the CLI's
+  `notifications/cancelled` for its request id, closes the diff tab and its
+  notification instead of leaving a Keep that reaches nobody. The server keeps
+  each request in flight by id so a cancellation can stop it, and sends no
+  response for a cancelled request.
 - `selection_changed` is pushed: at most one per 100 ms per connection, the last
   state winning, and the current selection replayed 500 ms after a CLI connects,
   as VS Code does. Positions are 0-based (the CLI adds 1). A terminal or panel
@@ -123,10 +130,10 @@ its uri. An unknown `minSeverity` is an INVALID_REQUEST naming the four choices.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index bb97cea..084e278 100644
+index 766fc1d..68df19b 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -3046,6 +3046,35 @@ version = "0.7.6"
+@@ -3047,6 +3047,35 @@ version = "0.7.6"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
  
@@ -162,7 +169,7 @@ index bb97cea..084e278 100644
  [[package]]
  name = "cli"
  version = "0.1.0"
-@@ -22680,6 +22709,7 @@ dependencies = [
+@@ -22681,6 +22710,7 @@ dependencies = [
   "channel",
   "chrono",
   "clap",
@@ -1413,10 +1420,10 @@ index 0000000..b1f01e1
 +}
 diff --git a/crates/claude_code_ide/src/open_diff.rs b/crates/claude_code_ide/src/open_diff.rs
 new file mode 100644
-index 0000000..a0ac1a1
+index 0000000..0c1cf3b
 --- /dev/null
 +++ b/crates/claude_code_ide/src/open_diff.rs
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,412 @@
 +//! The blocking `openDiff` tool.
 +//!
 +//! Shows Claude's proposed change as a side-by-side diff tab in Zed plus a
@@ -1437,7 +1444,7 @@ index 0000000..a0ac1a1
 +use buffer_diff::BufferDiff;
 +use editor::{DiffViewStyle, MultiBuffer, SelectionEffects, SplittableEditor, scroll::Autoscroll};
 +use futures::channel::oneshot;
-+use gpui::{AnyWindowHandle, AppContext as _, AsyncApp, DismissEvent, WeakEntity};
++use gpui::{AnyWindowHandle, AppContext as _, AsyncApp, DismissEvent, EntityId, WeakEntity};
 +use language::Buffer;
 +use serde_json::{Value, json};
 +use std::{cell::RefCell, rc::Rc};
@@ -1626,9 +1633,26 @@ index 0000000..a0ac1a1
 +        })
 +        .map_err(|error| ProtocolError::internal(error.to_string()))?;
 +
++    // If this request ends before the user decides -- the CLI disconnected, or
++    // cancelled the request with `notifications/cancelled` -- the future is
++    // dropped at the await below, and nothing after it runs. The guard closes
++    // the tab then, as the VS Code extension does (2.1.329, 2.1.331), so no
++    // tab is left whose Keep reaches nobody.
++    let mut pending_tab = editor_id.map(|editor_id| PendingDiffTab {
++        cx: cx.clone(),
++        window,
++        workspace: workspace.clone(),
++        editor_id,
++        notification_id: NotificationId::composite::<ClaudeDiffNotification>(tab_name.clone()),
++    });
++
 +    // Block until the user decides or closes the tab. A dropped sender (the
 +    // window closed under us) is a close too, never a rejection.
 +    let decision = decision_rx.await;
++    // Answered: the code below closes the tab, so the guard has nothing to do.
++    if let Some(tab) = pending_tab.as_mut() {
++        tab.disarm();
++    }
 +
 +    // Read the final buffer contents (the user may have edited the proposed
 +    // side) and close the diff tab now that the decision is made.
@@ -1652,6 +1676,56 @@ index 0000000..a0ac1a1
 +        .map_err(|error| ProtocolError::internal(error.to_string()))?;
 +
 +    Ok(diff_outcome(decision, final_contents, &tab_name))
++}
++
++/// Closes the diff tab of an `openDiff` request that ended without an answer
++/// (see `open_diff`). It cannot use a context in `drop`, so it schedules the
++/// close on the foreground executor.
++struct PendingDiffTab {
++    cx: AsyncApp,
++    window: AnyWindowHandle,
++    workspace: WeakEntity<Workspace>,
++    editor_id: EntityId,
++    notification_id: NotificationId,
++}
++
++impl PendingDiffTab {
++    fn disarm(&mut self) {
++        self.workspace = WeakEntity::new_invalid();
++    }
++}
++
++impl Drop for PendingDiffTab {
++    fn drop(&mut self) {
++        if self.workspace.upgrade().is_none() {
++            return;
++        }
++        let window = self.window;
++        let workspace = self.workspace.clone();
++        let editor_id = self.editor_id;
++        let notification_id = self.notification_id.clone();
++        log::debug!("claude_code_ide: openDiff ended unanswered; closing its tab");
++        self.cx
++            .spawn(async move |cx| {
++                window
++                    .update(cx, |_root, window, cx| {
++                        let Some(workspace) = workspace.upgrade() else {
++                            return;
++                        };
++                        workspace.update(cx, |workspace, cx| {
++                            workspace.dismiss_notification(&notification_id, cx);
++                            for pane in workspace.panes().to_vec() {
++                                pane.update(cx, |pane, cx| {
++                                    pane.close_item_by_id(editor_id, SaveIntent::Skip, window, cx)
++                                })
++                                .detach();
++                            }
++                        });
++                    })
++                    .ok();
++            })
++            .detach();
++    }
 +}
 +
 +/// What ended a pending `openDiff`. The protocol answer for each lives in
@@ -2370,10 +2444,10 @@ index 0000000..f687f87
 +}
 diff --git a/crates/claude_code_ide/src/server.rs b/crates/claude_code_ide/src/server.rs
 new file mode 100644
-index 0000000..427d33c
+index 0000000..45ad2db
 --- /dev/null
 +++ b/crates/claude_code_ide/src/server.rs
-@@ -0,0 +1,734 @@
+@@ -0,0 +1,926 @@
 +//! WebSocket transport and JSON-RPC/MCP message routing for the Claude Code IDE
 +//! integration.
 +//!
@@ -2390,7 +2464,11 @@ index 0000000..427d33c
 +    handshake::server::{ErrorResponse, Request, Response},
 +    http,
 +};
-+use futures::{AsyncRead, AsyncWrite, StreamExt as _, stream::FuturesUnordered};
++use futures::{
++    AsyncRead, AsyncWrite, StreamExt as _,
++    future::{AbortHandle, Abortable},
++    stream::FuturesUnordered,
++};
 +use serde::Serialize;
 +use serde_json::{Value, json};
 +
@@ -2565,11 +2643,20 @@ index 0000000..427d33c
 +    // Requests run concurrently with the frame loop: `openDiff` holds its
 +    // request until the user decides, and pushes and pings must not wait for it.
 +    let mut in_flight = FuturesUnordered::new();
++    // Each request in flight, by its `id`, so `notifications/cancelled` can stop
++    // it. A stopped `openDiff` closes its own tab (see `open_diff`), as does one
++    // dropped with the rest of `in_flight` when the client disconnects.
++    let mut cancellable: collections::HashMap<String, AbortHandle> =
++        collections::HashMap::default();
 +
 +    loop {
 +        let message = futures::select_biased! {
 +            message = incoming.next() => message,
-+            response = in_flight.select_next_some() => {
++            finished = in_flight.select_next_some() => {
++                let (request_id, response): (Option<String>, Option<String>) = finished;
++                if let Some(request_id) = request_id {
++                    cancellable.remove(&request_id);
++                }
 +                if let Some(response) = response {
 +                    outgoing
 +                        .send(Message::Text(String::into(response)))
@@ -2594,8 +2681,31 @@ index 0000000..427d33c
 +        let Some(message) = message else { break };
 +        match message.context("reading websocket frame")? {
 +            Message::Text(text) => {
++                if let Some(request_id) = cancelled_request_id(text.as_str()) {
++                    // MCP: the receiver of a cancellation stops the request and
++                    // sends no response for it.
++                    if let Some(abort) = cancellable.remove(&request_id) {
++                        log::debug!(
++                            "claude_code_ide: request {request_id} cancelled by the client"
++                        );
++                        abort.abort();
++                    }
++                    continue;
++                }
++                let request_id = request_id_key(text.as_str());
++                let (abort, registration) = AbortHandle::new_pair();
++                if let Some(request_id) = request_id.clone() {
++                    cancellable.insert(request_id, abort);
++                }
 +                let dispatcher = &dispatcher;
-+                in_flight.push(async move { handle_message(text.as_str(), dispatcher).await });
++                in_flight.push(async move {
++                    let response =
++                        Abortable::new(handle_message(text.as_str(), dispatcher), registration)
++                            .await
++                            .ok()
++                            .flatten();
++                    (request_id, response)
++                });
 +            }
 +            // Reply to keepalive pings so the CLI doesn't consider us dead.
 +            Message::Ping(payload) => {
@@ -2610,6 +2720,24 @@ index 0000000..427d33c
 +    }
 +
 +    Ok(())
++}
++
++/// The `id` of a JSON-RPC request, as a key for [`cancelled_request_id`]; `None`
++/// for a notification or a frame that is not JSON.
++fn request_id_key(raw: &str) -> Option<String> {
++    let value: Value = serde_json::from_str(raw).ok()?;
++    value.get("method")?;
++    Some(value.get("id")?.to_string())
++}
++
++/// The request a `notifications/cancelled` names (`params.requestId`), keyed as
++/// [`request_id_key`] keys it; `None` for any other message.
++fn cancelled_request_id(raw: &str) -> Option<String> {
++    let value: Value = serde_json::from_str(raw).ok()?;
++    if value.get("method")?.as_str()? != "notifications/cancelled" || value.get("id").is_some() {
++        return None;
++    }
++    Some(value.get("params")?.get("requestId")?.to_string())
 +}
 +
 +/// Routes a single incoming JSON-RPC message. Returns `Some(json)` to send back
@@ -2710,6 +2838,144 @@ index 0000000..427d33c
 +mod tests {
 +    use super::*;
 +    use futures::executor::block_on;
++
++    #[test]
++    fn a_cancellation_names_the_request_it_stops() {
++        let request =
++            r#"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"openDiff"}}"#;
++        let cancel =
++            r#"{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":7}}"#;
++        assert_eq!(request_id_key(request), cancelled_request_id(cancel));
++        assert_eq!(request_id_key(cancel), None, "a notification is no request");
++        assert_eq!(
++            cancelled_request_id(request),
++            None,
++            "a request cancels nothing"
++        );
++        assert_eq!(
++            request_id_key(r#"{"jsonrpc":"2.0","id":"a","method":"x"}"#),
++            cancelled_request_id(
++                r#"{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":"a"}}"#
++            ),
++            "string ids match too, and not the number of the same text"
++        );
++        assert_ne!(
++            request_id_key(r#"{"jsonrpc":"2.0","id":"7","method":"x"}"#),
++            request_id_key(request),
++        );
++    }
++
++    /// A tool call that never answers until it is dropped, and says when it is:
++    /// the stand-in for an `openDiff` the user has not decided.
++    struct BlockingDispatcher {
++        dropped: std::sync::Arc<std::sync::atomic::AtomicBool>,
++    }
++
++    struct SetOnDrop(std::sync::Arc<std::sync::atomic::AtomicBool>);
++
++    impl Drop for SetOnDrop {
++        fn drop(&mut self) {
++            self.0.store(true, std::sync::atomic::Ordering::SeqCst);
++        }
++    }
++
++    impl Dispatcher for BlockingDispatcher {
++        fn tools(&self) -> Vec<ToolDescriptor> {
++            Vec::new()
++        }
++
++        async fn call_tool(&self, _name: &str, _arguments: Value) -> Result<Value, ProtocolError> {
++            let _guard = SetOnDrop(self.dropped.clone());
++            futures::future::pending::<()>().await;
++            unreachable!("a pending future never completes")
++        }
++    }
++
++    /// A `notifications/cancelled` stops the request it names, so an `openDiff`
++    /// waiting for a decision is dropped (and closes its tab); the server sends
++    /// no response for it and keeps serving the connection.
++    #[test]
++    fn a_cancelled_request_is_dropped_and_the_connection_goes_on() {
++        use async_tungstenite::tungstenite::{Message, client::IntoClientRequest as _};
++        use futures::{SinkExt as _, StreamExt as _};
++        use std::sync::{Arc, atomic::AtomicBool, atomic::Ordering};
++
++        block_on(async {
++            let dropped = Arc::new(AtomicBool::new(false));
++            let (listener, port) = bind().await.expect("binding the test listener");
++            let dispatcher = BlockingDispatcher {
++                dropped: dropped.clone(),
++            };
++            let server = smol::spawn(async move {
++                let (stream, _) = listener.accept().await.expect("accepting the test client");
++                serve_connection(
++                    stream,
++                    "the-token".to_owned(),
++                    dispatcher,
++                    futures::stream::pending::<Value>(),
++                )
++                .await
++            });
++
++            let stream = smol::net::TcpStream::connect(("127.0.0.1", port))
++                .await
++                .expect("connecting to the test listener");
++            let mut request = format!("ws://127.0.0.1:{port}/")
++                .into_client_request()
++                .expect("a valid request");
++            request
++                .headers_mut()
++                .insert(AUTH_HEADER, "the-token".parse().unwrap());
++            request
++                .headers_mut()
++                .insert("Sec-WebSocket-Protocol", "mcp".parse().unwrap());
++            let (mut socket, _) = async_tungstenite::client_async(request, stream)
++                .await
++                .expect("the upgrade succeeds");
++
++            socket
++                .send(Message::text(
++                    r#"{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"openDiff","arguments":{}}}"#,
++                ))
++                .await
++                .expect("sending the blocking call");
++            socket
++                .send(Message::text(
++                    r#"{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":9}}"#,
++                ))
++                .await
++                .expect("sending the cancellation");
++            socket
++                .send(Message::text(
++                    r#"{"jsonrpc":"2.0","id":10,"method":"initialize"}"#,
++                ))
++                .await
++                .expect("sending a later request");
++            let reply = loop {
++                match socket
++                    .next()
++                    .await
++                    .expect("a frame")
++                    .expect("a valid frame")
++                {
++                    Message::Text(text) => break text.to_string(),
++                    _ => continue,
++                }
++            };
++            let value: Value = serde_json::from_str(&reply).expect("a JSON response");
++            assert_eq!(
++                value["id"], 10,
++                "no response is sent for the cancelled request"
++            );
++            assert!(
++                dropped.load(Ordering::SeqCst),
++                "the cancelled call was dropped"
++            );
++
++            drop(socket);
++            server.cancel().await;
++        });
++    }
 +
 +    struct MockDispatcher;
 +
