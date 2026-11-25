@@ -887,6 +887,8 @@
 # session code it extends, and the ebuild's REQUIRED_USE ties the two. It applies
 # on top of 0058 with or without 0057, and 0050/0051 apply on top of it unchanged.
 0063-devtools-panel.patch
+# 0184: the devtools panel's notices in en-US and pt-BR. On 0063.
+0184-agent-ui-the-devtools-panel-s-notices-speak-pt-br.patch
 
 # @feature: epic
 # 0066: the Epic Stories panel (story 042) -- a read-only dock panel listing the
@@ -920,6 +922,8 @@
 # 0085: the microphone ends the composer's left-hand group, next to Add
 # Context, instead of sitting beside Send (proposal §5.6). In 0067's group.
 0085-agent-ui-voice-button-beside-add-context.patch
+# 0185: voice input's button, strip and notices in en-US and pt-BR. On 0085.
+0185-agent-ui-voice-input-voice-input-speaks-pt-br.patch
 
 # @feature: test
 # 0050, 0051: tests only -- nothing in them is compiled into the editor -- so the
