@@ -757,6 +757,9 @@
 # 0176: the /btw answer is drawn at the thread's text size (text_ui), not 8/7 larger
 # (operator, 2026-11-23/24). On 0115/0169.
 0176-agent-ui-the-btw-answer-is-drawn-at-the-thread-s-text-size.patch
+# 0181: Zeo's own cards in the thread -- the tasks card and the /btw card -- in en-US and
+# pt-BR, through zeo_i18n (0177). Surfaces that sit inside Zed's UI stay English. On 0176.
+0181-agent-ui-the-tasks-card-and-the-btw-card-speak-pt-br.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -851,6 +854,8 @@
 # Forget / Allow dialogs, the thread's lock and quick modal, the MCP notice -- in en-US and
 # pt-BR. On 0178.
 0179-agent-sandbox-agent-ui-agent-servers-the-jail-s-messages-and-dialogs-speak-pt-br.patch
+# 0180: the Secrets page in en-US and pt-BR. On 0179.
+0180-settings-ui-the-secrets-page-speaks-pt-br.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

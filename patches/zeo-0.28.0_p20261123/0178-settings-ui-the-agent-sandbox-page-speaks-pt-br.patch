@@ -39,10 +39,10 @@ In the ai-jail group, after 0175: every file it edits belongs to that group.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 4959317..9d320d0 100644
+index 3d94537..e4702da 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -16772,6 +16772,7 @@ dependencies = [
+@@ -16773,6 +16773,7 @@ dependencies = [
   "workspace",
   "zed_actions",
   "zed_credentials_provider",
@@ -1692,32 +1692,28 @@ index 0000000..8375a7e
 +agent-memory-forget-failed = Não foi possível esquecer { $path }: { $error }
 +agent-memory-save-failed = Não foi possível salvar a configuração de memória do agente: { $error }
 diff --git a/crates/zeo_i18n/src/catalog.rs b/crates/zeo_i18n/src/catalog.rs
-index a4c12e3..1672f85 100644
+index e950158..12539f1 100644
 --- a/crates/zeo_i18n/src/catalog.rs
 +++ b/crates/zeo_i18n/src/catalog.rs
-@@ -34,11 +34,23 @@ pub struct LocaleSource {
- pub static SHIPPED: &[LocaleSource] = &[
-     LocaleSource {
-         language: "en-US",
--        files: &[("en-US/zeo.ftl", include_str!("../locales/en-US/zeo.ftl"))],
-+        files: &[
-+            ("en-US/zeo.ftl", include_str!("../locales/en-US/zeo.ftl")),
+@@ -40,6 +40,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+                 "en-US/agent-ui.ftl",
+                 include_str!("../locales/en-US/agent-ui.ftl"),
+             ),
 +            (
 +                "en-US/agent-sandbox.ftl",
 +                include_str!("../locales/en-US/agent-sandbox.ftl"),
 +            ),
-+        ],
+         ],
      },
      LocaleSource {
-         language: "pt-BR",
--        files: &[("pt-BR/zeo.ftl", include_str!("../locales/pt-BR/zeo.ftl"))],
-+        files: &[
-+            ("pt-BR/zeo.ftl", include_str!("../locales/pt-BR/zeo.ftl")),
+@@ -50,6 +54,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+                 "pt-BR/agent-ui.ftl",
+                 include_str!("../locales/pt-BR/agent-ui.ftl"),
+             ),
 +            (
 +                "pt-BR/agent-sandbox.ftl",
 +                include_str!("../locales/pt-BR/agent-sandbox.ftl"),
 +            ),
-+        ],
+         ],
      },
  ];
- 

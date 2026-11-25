@@ -39,7 +39,7 @@ In the ai-jail group, after 0178: every file it edits belongs to that group.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 9d320d0..c732dc8 100644
+index e4702da..c732dc8 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -406,6 +406,7 @@ dependencies = [
@@ -54,14 +54,6 @@ index 9d320d0..c732dc8 100644
   "watch",
   "workspace",
   "zed_credentials_provider",
-+ "zeo_i18n",
- ]
- 
- [[package]]
-@@ -634,6 +636,7 @@ dependencies = [
-  "watch",
-  "workspace",
-  "zed_actions",
 + "zeo_i18n",
  ]
  
@@ -943,18 +935,6 @@ index f2550ba..0232a84 100644
      assert!(
          shown.contains(&f.root.display().to_string()),
          "shown text names the root: {shown}"
-diff --git a/crates/agent_ui/Cargo.toml b/crates/agent_ui/Cargo.toml
-index 7a8659c..2a5398d 100644
---- a/crates/agent_ui/Cargo.toml
-+++ b/crates/agent_ui/Cargo.toml
-@@ -122,6 +122,7 @@ zed_actions.workspace = true
- image.workspace = true
- reqwest_client = { workspace = true, optional = true }
- 
-+zeo_i18n.workspace = true
- [dev-dependencies]
- acp_thread = { workspace = true, features = ["test-support"] }
- agent = { workspace = true, features = ["test-support"] }
 diff --git a/crates/agent_ui/src/agent_jail_quick_modal.rs b/crates/agent_ui/src/agent_jail_quick_modal.rs
 index c03576a..03ef079 100644
 --- a/crates/agent_ui/src/agent_jail_quick_modal.rs
@@ -1698,10 +1678,10 @@ index 0000000..77ed097
 +agent-jail-quick-hint = Vale quando o agente reiniciar: clique no cadeado de novo quando ele ficar âmbar.
 +agent-jail-quick-advanced = Avançado…
 diff --git a/crates/zeo_i18n/src/catalog.rs b/crates/zeo_i18n/src/catalog.rs
-index 1672f85..e7166dd 100644
+index 12539f1..236a997 100644
 --- a/crates/zeo_i18n/src/catalog.rs
 +++ b/crates/zeo_i18n/src/catalog.rs
-@@ -40,6 +40,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+@@ -44,6 +44,10 @@ pub static SHIPPED: &[LocaleSource] = &[
                  "en-US/agent-sandbox.ftl",
                  include_str!("../locales/en-US/agent-sandbox.ftl"),
              ),
@@ -1712,7 +1692,7 @@ index 1672f85..e7166dd 100644
          ],
      },
      LocaleSource {
-@@ -50,6 +54,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+@@ -58,6 +62,10 @@ pub static SHIPPED: &[LocaleSource] = &[
                  "pt-BR/agent-sandbox.ftl",
                  include_str!("../locales/pt-BR/agent-sandbox.ftl"),
              ),

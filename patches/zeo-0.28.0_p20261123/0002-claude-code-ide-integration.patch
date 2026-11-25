@@ -117,10 +117,10 @@ its uri. An unknown `minSeverity` is an INVALID_REQUEST naming the four choices.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 51b7bfa..4219f60 100644
+index bb97cea..084e278 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -3045,6 +3045,35 @@ version = "0.7.6"
+@@ -3046,6 +3046,35 @@ version = "0.7.6"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
  
@@ -156,7 +156,7 @@ index 51b7bfa..4219f60 100644
  [[package]]
  name = "cli"
  version = "0.1.0"
-@@ -22679,6 +22708,7 @@ dependencies = [
+@@ -22680,6 +22709,7 @@ dependencies = [
   "channel",
   "chrono",
   "clap",
