@@ -13,9 +13,11 @@
                Fluent renders a missing one as "{$name}" and silently ignores an extra one;
   stale        an id a translation defines and en-US no longer does;
   foreign var  a translation reading a variable en-US's pattern never gets;
-  unlisted     an .ftl file on disk that catalog.rs does not embed, so it would never ship.
+  unlisted     an .ftl file on disk that catalog.rs does not embed, so it would never ship;
+  absent       an .ftl file catalog.rs embeds that is not on disk -- the build would fail;
+  literal      a sentence left as a string literal in a file that already uses t!.
 
-Text the code still writes as a literal is a different check, not this one. Why a script and
+Why a script and
 not a build.rs: a build script sees only its own crate, never the t! calls in the crates that
 use it (docs/I18N-PROPOSAL.md in zeo-workspace, section 2).
 
@@ -35,6 +37,14 @@ ATTRIBUTE = re.compile(r"^\s+\.([a-zA-Z][a-zA-Z0-9_-]*)\s*=")
 VARIABLE = re.compile(r"\{[^}]*?\$([a-zA-Z][a-zA-Z0-9_-]*)")
 # `name = value` at the macro's top level, not `==`, `<=`, `>=` or `!=`.
 NAMED_ARG = re.compile(r"(?:^|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=(?!=)")
+USES_T = re.compile(r"\bzeo_i18n::t\b|\buse zeo_i18n::")
+# A capitalised word followed by another word, or text ending in a sentence's punctuation:
+# what a person reads. Identifiers, ids, paths and commands rarely look like either.
+PROSE = re.compile(r'"(?:[A-Z][a-z]+(?: [A-Za-z0-9.,:;()\'/~-]+)+|[^"\n]*[a-z][.…])"')
+NOT_TEXT_LINE = re.compile(
+    r"\blog::|event=|anyhow!|\.context\(|\.with_context\(|expect\(|panic!|debug_assert|"
+    r"unreachable!|debug_selector|KeyBinding|actions!"
+)
 SHIPPED_FILE = re.compile(r'include_str!\("\.\./locales/([^"]+\.ftl)"\)')
 
 
@@ -82,6 +92,44 @@ def uses_in(path: pathlib.Path, tree: pathlib.Path) -> list[tuple[str, frozenset
     return uses
 
 
+def literals_in(path: pathlib.Path, tree: pathlib.Path) -> list[str]:
+    """Sentence-like string literals left in a file that already translates with t!.
+
+    Only such a file is read: a file with no t! has not been translated yet, and listing every
+    English literal in Zed would bury the ones that matter. A line is skipped when it is a
+    comment, a log or an internal error, or carries `i18n: not text` (a key, a command, a
+    name that must not be translated); test files are skipped whole.
+    """
+    if path.name.endswith("_tests.rs") or path.name == "tests.rs":
+        return []
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if not USES_T.search(text):
+        return []
+    found = []
+    lines = text.splitlines()
+    in_tests = False
+    for number, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("#[cfg(test)]"):
+            # Only an inline test module is skipped (to the end of the file, where this tree
+            # puts it); a #[cfg(test)] on one helper must not blind the rest of the file.
+            following = next((l.strip() for l in lines[number:] if l.strip()), "")
+            if re.match(r"(pub(\([^)]*\))? )?mod \w+ \{", following):
+                in_tests = True
+        if in_tests or stripped.startswith(("//", "#[", "*")):
+            continue
+        previous = lines[number - 2] if number > 1 else ""
+        if "i18n: not text" in line or "i18n: not text" in previous:
+            continue
+        if NOT_TEXT_LINE.search(line):
+            continue
+        for match in PROSE.finditer(T_CALL.sub("", line)):
+            found.append(
+                f"literal      {path.relative_to(tree)}:{number}: {match.group(0)[:60]}"
+            )
+    return found
+
+
 def parse_ftl(path: pathlib.Path) -> dict[str, tuple[frozenset, int]]:
     """id or id.attribute -> (variables its pattern reads, line). Selector variables count."""
     entries: dict[str, tuple[set, int]] = {}
@@ -98,8 +146,8 @@ def parse_ftl(path: pathlib.Path) -> dict[str, tuple[frozenset, int]]:
         elif (m := ATTRIBUTE.match(raw)) and message:
             current = f"{message}.{m.group(1)}"
             entries[current] = (set(), number)
-        elif raw.startswith((" ", "\t")) and current:
-            pass  # a continuation line of the current pattern
+        elif raw.startswith((" ", "\t", "}")) and current:
+            pass  # a continuation line of the current pattern, or a select's closing brace
         else:
             message = current = None  # a term (-name) or junk: not a message
             continue
@@ -113,6 +161,11 @@ def check(tree: pathlib.Path) -> list[str]:
     problems: list[str] = []
 
     shipped = set(SHIPPED_FILE.findall(catalog_rs.read_text(encoding="utf-8")))
+    for rel in sorted(shipped):
+        if not (locales_dir / rel).is_file():
+            problems.append(
+                f"absent       {I18N_CRATE}/locales/{rel}: catalog.rs embeds it and it is not there"
+            )
     catalogs: dict[str, dict[str, tuple[frozenset, int, str]]] = {}
     for ftl in sorted(locales_dir.glob("*/*.ftl")):
         rel = ftl.relative_to(locales_dir).as_posix()
@@ -150,6 +203,10 @@ def check(tree: pathlib.Path) -> list[str]:
                     f"variables    {where}: {key!r} passes {sorted(names)}, "
                     f"{FALLBACK} reads {sorted(wanted)}"
                 )
+
+    for rs in sorted((tree / "crates").rglob("*.rs")):
+        if I18N_CRATE not in rs.relative_to(tree).parents:
+            problems.extend(literals_in(rs, tree))
 
     used_messages = {key.split(".", 1)[0] for key in used}
     for key, (_, _, where) in sorted(english.items()):

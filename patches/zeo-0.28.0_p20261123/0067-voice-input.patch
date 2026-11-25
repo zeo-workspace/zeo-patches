@@ -111,7 +111,7 @@ reqwest_client without_proxy.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index b579e6c..69eb22c 100644
+index 37a28a4..3b568c9 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -555,6 +555,7 @@ dependencies = [
@@ -139,7 +139,7 @@ index b579e6c..69eb22c 100644
   "proc-macro2",
   "quote",
   "regex",
-@@ -20026,6 +20030,30 @@ dependencies = [
+@@ -20027,6 +20031,30 @@ dependencies = [
   "settings",
  ]
  
@@ -170,7 +170,7 @@ index b579e6c..69eb22c 100644
  [[package]]
  name = "vscode_theme"
  version = "0.2.0"
-@@ -21117,6 +21145,29 @@ dependencies = [
+@@ -21118,6 +21146,29 @@ dependencies = [
   "zed_actions",
  ]
  
@@ -200,7 +200,7 @@ index b579e6c..69eb22c 100644
  [[package]]
  name = "whoami"
  version = "1.6.1"
-@@ -22957,6 +23008,7 @@ dependencies = [
+@@ -22958,6 +23009,7 @@ dependencies = [
   "uuid",
   "vim",
   "vim_mode_setting",

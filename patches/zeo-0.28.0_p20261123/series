@@ -843,6 +843,10 @@
 # from a local secret and the root (ai-jail 3.5.0-r6 --hostname; operator, 2026-11-23/24).
 # On 0168.
 0175-agent-sandbox-a-jail-that-hides-the-host-is-named-for-its-project.patch
+# 0178: the Agent Sandbox page reads its text through zeo_i18n (0177), in en-US and pt-BR --
+# the first translated screen. Its English is the page's own, byte for byte. In this group
+# because every file it edits is the group's own.
+0178-settings-ui-the-agent-sandbox-page-speaks-pt-br.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

@@ -127,6 +127,55 @@ class I18nCheckTest(TreeCase):
     def test_an_ftl_file_catalog_rs_does_not_embed_is_unlisted(self):
         self.assertEqual(self.kinds(self.tree(extra_ftl="# empty\n")), ["unlisted"])
 
+    def test_an_ftl_file_catalog_rs_embeds_but_is_missing_is_absent(self):
+        catalog = CATALOG_RS.replace("pt-BR/zeo.ftl", "pt-BR/gone.ftl")
+        kinds = self.kinds(self.tree(catalog=catalog))
+        self.assertIn("absent", kinds)
+
+    def test_a_sentence_left_in_a_translated_file_is_a_literal(self):
+        code = (
+            "use zeo_i18n::t;\n"
+            + CODE_OK
+            + 'fn more() { Label::new("Hide the Disks"); }\n'
+        )
+        problems = i18n_check.check(self.tree(code=code))
+        self.assertEqual([p.split()[0] for p in problems], ["literal"], problems)
+        self.assertIn("sandbox.rs:12", problems[0])
+
+    def test_a_sentence_ending_in_a_period_is_a_literal(self):
+        code = (
+            "use zeo_i18n::t;\n"
+            + CODE_OK
+            + 'const NOTE: &str = "restart the agent to apply.";\n'
+        )
+        self.assertEqual(self.kinds(self.tree(code=code)), ["literal"])
+
+    def test_logs_markers_comments_and_tests_are_not_literals(self):
+        code = (
+            "use zeo_i18n::t;\n"
+            + CODE_OK
+            + 'log::warn!("Could not read the file");\n'
+            + 'let key = "Agent Sandbox (ai-jail)"; // i18n: not text\n'
+            + '// Label::new("Hide the Host")\n'
+            + '#[cfg(test)]\nmod tests { const A: &str = "Hide the Host"; }\n'
+        )
+        self.assertEqual(i18n_check.check(self.tree(code=code)), [])
+
+    def test_a_test_only_item_does_not_hide_the_rest_of_the_file(self):
+        # agent_jail_page.rs, 2026-11-24: #[cfg(test)] on a single helper made the lint skip
+        # everything after it, and "Default for every project" shipped untranslated.
+        code = (
+            "use zeo_i18n::t;\n"
+            + CODE_OK
+            + "#[cfg(test)]\nfn helper() {}\n"
+            + 'fn later() { Label::new("Default for every project"); }\n'
+        )
+        self.assertEqual(self.kinds(self.tree(code=code)), ["literal"])
+
+    def test_a_file_that_does_not_use_t_is_not_linted(self):
+        code = 'fn f() { Label::new("Hide the Host"); }\n'
+        self.assertNotIn("literal", self.kinds(self.tree(code=code)))
+
     def test_a_tree_without_the_crate_is_a_usage_error(self):
         root = pathlib.Path(self.enterContext(tempfile.TemporaryDirectory()))
         script = pathlib.Path(__file__).with_name("i18n-check.py")

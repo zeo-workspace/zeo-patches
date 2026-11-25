@@ -1,4 +1,4 @@
-From c05507d61906a906b8e72162be5ca18370fb3f05 Mon Sep 17 00:00:00 2001
+From 80ecce8086ae31445530f374d9a05a98de2a0fa5 Mon Sep 17 00:00:00 2001
 From: zed-patches <zed-patches@localhost>
 Date: Tue, 24 Nov 2026 19:20:20 -0300
 Subject: [PATCH] zeo_i18n: a translation catalog for Zeo's own screens
@@ -546,10 +546,10 @@ index 0000000..a4c12e3
 +}
 diff --git a/crates/zeo_i18n/src/catalog_tests.rs b/crates/zeo_i18n/src/catalog_tests.rs
 new file mode 100644
-index 0000000..d0f6252
+index 0000000..51eb2d5
 --- /dev/null
 +++ b/crates/zeo_i18n/src/catalog_tests.rs
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,178 @@
 +use crate::{Catalog, FALLBACK_LANGUAGE, FluentArgs, LocaleSource, PSEUDO_LANGUAGE, SHIPPED};
 +
 +const EN: &str = "\
@@ -710,6 +710,12 @@ index 0000000..d0f6252
 +}
 +
 +#[test]
++fn the_global_catalog_answers_in_english_until_init() {
++    // set_language is never called by a test; if one did, this would race it.
++    assert_eq!(crate::current_language(), FALLBACK_LANGUAGE);
++}
++
++#[test]
 +fn the_macro_formats_through_the_global_catalog() {
 +    // The shipped catalog may hold no message yet; an unknown id comes back
 +    // as itself, with or without variables.
@@ -813,10 +819,10 @@ index 0000000..85c7b30
 +}
 diff --git a/crates/zeo_i18n/src/zeo_i18n.rs b/crates/zeo_i18n/src/zeo_i18n.rs
 new file mode 100644
-index 0000000..ec33d60
+index 0000000..6e47a52
 --- /dev/null
 +++ b/crates/zeo_i18n/src/zeo_i18n.rs
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,146 @@
 +//! Zeo's UI translations (docs/I18N-PROPOSAL.md in zeo-workspace).
 +//!
 +//! Text is looked up by a stable id with [`t!`], formatted by Fluent from
@@ -843,8 +849,11 @@ index 0000000..ec33d60
 +pub use catalog::{Catalog, FALLBACK_LANGUAGE, LocaleSource, PSEUDO_LANGUAGE, SHIPPED};
 +pub use fluent_bundle::{FluentArgs, FluentValue};
 +
++/// English until [`init`] runs: only `main` applies the setting or the system's
++/// languages, so a test -- which never calls `init` -- reads the same English on
++/// a desktop set to Portuguese as on a CI runner with no locale at all.
 +static CATALOG: LazyLock<RwLock<Catalog>> =
-+    LazyLock::new(|| RwLock::new(Catalog::new(&system_languages(), SHIPPED)));
++    LazyLock::new(|| RwLock::new(Catalog::new(&[], SHIPPED)));
 +
 +/// Ids already reported missing: `t!` runs on every frame, so an unknown id
 +/// is logged once, not sixty times a second.
