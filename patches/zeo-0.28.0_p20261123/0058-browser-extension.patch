@@ -102,10 +102,10 @@ where the listener that calls it is not built; the tests keep using it.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index c732dc8..652d74b 100644
+index 0c1199d..bf34aea 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -577,6 +577,7 @@ dependencies = [
+@@ -578,6 +578,7 @@ dependencies = [
   "http_client",
   "idna",
   "image",
@@ -113,7 +113,7 @@ index c732dc8..652d74b 100644
   "indoc",
   "itertools 0.14.0",
   "jsonschema",
-@@ -617,6 +618,7 @@ dependencies = [
+@@ -618,6 +619,7 @@ dependencies = [
   "serde_json_lenient",
   "settings",
   "shlex 2.0.1",
@@ -121,7 +121,7 @@ index c732dc8..652d74b 100644
   "streaming_diff",
   "task",
   "telemetry",
-@@ -23147,6 +23149,18 @@ version = "0.3.3"
+@@ -23148,6 +23150,18 @@ version = "0.3.3"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524"
  

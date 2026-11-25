@@ -111,10 +111,10 @@ reqwest_client without_proxy.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 10accfc..b3fbb2d 100644
+index 04af01a..593ba35 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -557,6 +557,7 @@ dependencies = [
+@@ -558,6 +558,7 @@ dependencies = [
   "command_palette_hooks",
   "component",
   "context_server",
@@ -122,7 +122,7 @@ index 10accfc..b3fbb2d 100644
   "db",
   "editor",
   "eval_utils",
-@@ -635,6 +636,7 @@ dependencies = [
+@@ -636,6 +637,7 @@ dependencies = [
   "util",
   "uuid",
   "vim",
@@ -130,7 +130,7 @@ index 10accfc..b3fbb2d 100644
   "watch",
   "workspace",
   "zed_actions",
-@@ -2312,6 +2314,8 @@ dependencies = [
+@@ -2313,6 +2315,8 @@ dependencies = [
   "cexpr",
   "clang-sys",
   "itertools 0.13.0",
@@ -139,7 +139,7 @@ index 10accfc..b3fbb2d 100644
   "proc-macro2",
   "quote",
   "regex",
-@@ -20030,6 +20034,30 @@ dependencies = [
+@@ -20032,6 +20036,30 @@ dependencies = [
   "settings",
  ]
  
@@ -170,7 +170,7 @@ index 10accfc..b3fbb2d 100644
  [[package]]
  name = "vscode_theme"
  version = "0.2.0"
-@@ -21121,6 +21149,29 @@ dependencies = [
+@@ -21123,6 +21151,29 @@ dependencies = [
   "zed_actions",
  ]
  
@@ -200,7 +200,7 @@ index 10accfc..b3fbb2d 100644
  [[package]]
  name = "whoami"
  version = "1.6.1"
-@@ -22961,6 +23012,7 @@ dependencies = [
+@@ -22963,6 +23014,7 @@ dependencies = [
   "uuid",
   "vim",
   "vim_mode_setting",

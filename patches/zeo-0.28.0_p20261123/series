@@ -760,6 +760,8 @@
 # 0181: Zeo's own cards in the thread -- the tasks card and the /btw card -- in en-US and
 # pt-BR, through zeo_i18n (0177). Surfaces that sit inside Zed's UI stay English. On 0176.
 0181-agent-ui-the-tasks-card-and-the-btw-card-speak-pt-br.patch
+# 0182: the Agent Tasks panel in en-US and pt-BR. On 0181.
+0182-agent-tasks-panel-the-agent-tasks-panel-speaks-pt-br.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -899,6 +901,8 @@
 # applies with claude-code-ide and devtools-bridge each on or off, and 0050/0051
 # apply on top of it unchanged.
 0066-epic-panel.patch
+# 0183: the Epico panel in en-US and pt-BR (zeo_i18n, 0177). On 0066.
+0183-epic-panel-the-epico-panel-speaks-pt-br.patch
 
 # @feature: voice
 # 0067: voice input (story 044) -- a microphone in the agent composer: speech

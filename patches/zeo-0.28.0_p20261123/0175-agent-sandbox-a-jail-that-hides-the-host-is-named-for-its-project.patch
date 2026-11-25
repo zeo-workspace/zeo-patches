@@ -42,7 +42,7 @@ no secret.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 235410d..3d94537 100644
+index fdd02d5..dafeb0a 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -398,6 +398,7 @@ dependencies = [

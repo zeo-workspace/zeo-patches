@@ -92,10 +92,10 @@ offers on Linux alone, so even macOS did not compile. Elsewhere `init` logs
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 084e278..c04b63f 100644
+index 68df19b..d27fc06 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -4938,6 +4938,32 @@ dependencies = [
+@@ -4939,6 +4939,32 @@ dependencies = [
   "yaml-rust2",
  ]
  
@@ -128,7 +128,7 @@ index 084e278..c04b63f 100644
  [[package]]
  name = "diagnostics"
  version = "0.1.0"
-@@ -22728,6 +22754,7 @@ dependencies = [
+@@ -22729,6 +22755,7 @@ dependencies = [
   "debugger_tools",
   "debugger_ui",
   "dev_container",

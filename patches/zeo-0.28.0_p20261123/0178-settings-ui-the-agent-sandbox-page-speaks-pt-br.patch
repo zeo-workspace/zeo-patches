@@ -39,10 +39,10 @@ In the ai-jail group, after 0175: every file it edits belongs to that group.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 3d94537..e4702da 100644
+index dafeb0a..38e3488 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -16773,6 +16773,7 @@ dependencies = [
+@@ -16774,6 +16774,7 @@ dependencies = [
   "workspace",
   "zed_actions",
   "zed_credentials_provider",
@@ -1692,12 +1692,12 @@ index 0000000..8375a7e
 +agent-memory-forget-failed = Não foi possível esquecer { $path }: { $error }
 +agent-memory-save-failed = Não foi possível salvar a configuração de memória do agente: { $error }
 diff --git a/crates/zeo_i18n/src/catalog.rs b/crates/zeo_i18n/src/catalog.rs
-index e950158..12539f1 100644
+index 9a71fa4..9ed4402 100644
 --- a/crates/zeo_i18n/src/catalog.rs
 +++ b/crates/zeo_i18n/src/catalog.rs
-@@ -40,6 +40,10 @@ pub static SHIPPED: &[LocaleSource] = &[
-                 "en-US/agent-ui.ftl",
-                 include_str!("../locales/en-US/agent-ui.ftl"),
+@@ -44,6 +44,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+                 "en-US/agent-tasks.ftl",
+                 include_str!("../locales/en-US/agent-tasks.ftl"),
              ),
 +            (
 +                "en-US/agent-sandbox.ftl",
@@ -1706,9 +1706,9 @@ index e950158..12539f1 100644
          ],
      },
      LocaleSource {
-@@ -50,6 +54,10 @@ pub static SHIPPED: &[LocaleSource] = &[
-                 "pt-BR/agent-ui.ftl",
-                 include_str!("../locales/pt-BR/agent-ui.ftl"),
+@@ -58,6 +62,10 @@ pub static SHIPPED: &[LocaleSource] = &[
+                 "pt-BR/agent-tasks.ftl",
+                 include_str!("../locales/pt-BR/agent-tasks.ftl"),
              ),
 +            (
 +                "pt-BR/agent-sandbox.ftl",
