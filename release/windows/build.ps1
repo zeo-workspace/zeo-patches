@@ -58,9 +58,8 @@ foreach ($art in @('crates\zed\resources\app-icon-zeo.png', 'crates\zed\resource
     if (-not (Test-Path $art)) { throw "build event=missing-art file=$art" }
 }
 
-# bundle-windows.ps1 takes these from the working directory when present (0127) instead of
-# downloading them unchecked.
-Copy-Item $pinned['AGS_SDK_v6.3.0.zip'] -Destination '.\AGS_SDK_v6.3.0.zip' -Force
+# bundle-windows.ps1 takes this from the working directory when present (0127) instead of
+# downloading it unchecked. AMD GPU Services is gone since Zed 6ba65ce3 (#67404).
 Copy-Item $pinned['Microsoft.Windows.Console.ConPTY.1.25.260710002-preview.nupkg'] `
     -Destination '.\Microsoft.Windows.Console.ConPTY.1.25.260710002-preview.nupkg' -Force
 
@@ -195,7 +194,7 @@ if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
 $name = "zeo-$Pvr-windows-x86_64"
 $stage = Join-Path $Out $name
 New-Item -ItemType Directory -Path $stage | Out-Null
-$runtime = @('Zeo.exe', 'bin', 'conpty.dll', 'amd_ags_x64.dll', 'x64', 'arm64', 'zeo-remote-server')
+$runtime = @('Zeo.exe', 'bin', 'conpty.dll', 'x64', 'arm64', 'zeo-remote-server')
 foreach ($item in $runtime) {
     $from = Join-Path $inno $item
     if (Test-Path $from) {

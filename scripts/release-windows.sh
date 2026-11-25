@@ -11,7 +11,7 @@
 #             (the PNGs from the overlay's files/ as src_prepare copies them, the .ico from
 #             zeo/brand/rendered/), RELEASE_CHANNEL=zeo, and the Linux zeo-remote-server that
 #             0124 looks for beside the editor -> one tarball
-#   2. host   the binary inputs Zed's build would download unchecked (WebRTC, AGS, ConPTY),
+#   2. host   the binary inputs Zed's build would download unchecked (WebRTC, ConPTY),
 #             fetched once into the cache and checked against release/windows/build-inputs.lock
 #   3. guest  release/windows/build.ps1: checks the inputs again, runs Zed's bundle-windows.ps1
 #             for the zeo channel (0127), assembles the zip
@@ -211,7 +211,7 @@ import struct, sys, zipfile
 zip_path, no_server = sys.argv[1], sys.argv[2] == "1"
 z = zipfile.ZipFile(zip_path)
 names = {n.replace("\\", "/") for n in z.namelist()}
-need = ["Zeo.exe", "bin/zeo.exe", "bin/zeo", "conpty.dll", "amd_ags_x64.dll", "x64/OpenConsole.exe"]
+need = ["Zeo.exe", "bin/zeo.exe", "bin/zeo", "conpty.dll", "x64/OpenConsole.exe"]
 if not no_server:
     need.append("zeo-remote-server")
 missing = [n for n in need if n not in names]
