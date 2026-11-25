@@ -96,6 +96,12 @@ identifier, protocol and test literals stay Zed, as do 22 ambiguous ones
 (collab, Copilot sign-in, telemetry, server versions). Each line changes
 only Zed -> Zeo inside the literal.
 
+Re-triage (2026-11-25, bump to Zed 6ba65ce3): five new upstream literals
+name the running application and now say Zeo, approved by the operator --
+three Bedrock setup notices (#67258) and two Windows sandbox errors about the
+CLI that starts sandboxed commands (#66918). The PSEC proxy peer name "Zed"
+stays: the code says it "can be anything" and no one reads it.
+
 ---
 
 diff --git a/crates/agent_servers/src/acp/v1.rs b/crates/agent_servers/src/acp/v1.rs
@@ -474,9 +480,34 @@ index f8b4e73..5a6675e 100644
                      .size(LabelSize::Small)
                      .color(Color::Muted),
 diff --git a/crates/language_models/src/provider/bedrock.rs b/crates/language_models/src/provider/bedrock.rs
-index 9034680..5c0ad24 100644
+index 9034680..6a672ae 100644
 --- a/crates/language_models/src/provider/bedrock.rs
 +++ b/crates/language_models/src/provider/bedrock.rs
+@@ -828,13 +828,13 @@ impl State {
+         if self.model_catalog.is_some() {
+             let error = error?;
+             Some((
+-                format!("Zed keeps the earlier account list, which may be out of date. {error}"),
++                format!("Zeo keeps the earlier account list, which may be out of date. {error}"),
+                 true,
+             ))
+         } else if self.uses_public_catalog() {
+             let reason = error.unwrap_or("A custom endpoint is configured.");
+             Some((
+-                format!("Zed shows the models that models.dev lists for your Region. {reason}"),
++                format!("Zeo shows the models that models.dev lists for your Region. {reason}"),
+                 error.is_some(),
+             ))
+         } else {
+@@ -1177,7 +1177,7 @@ impl LanguageModelProvider for BedrockLanguageModelProvider {
+                     .into()
+             })
+             .description(InlineDescription::Text(
+-                "Configure authentication in settings or enter static credentials. Zed lists inference profiles in your Region. If AWS listing is unavailable, Zed keeps earlier results or offers models from models.dev. A custom endpoint uses the models.dev list and your settings.".into(),
++                "Configure authentication in settings or enter static credentials. Zeo lists inference profiles in your Region. If AWS listing is unavailable, Zeo keeps earlier results or offers models from models.dev. A custom endpoint uses the models.dev list and your settings.".into(),
+             )),
+         ))
+     }
 @@ -3585,7 +3585,7 @@ impl ConfigurationView {
              )
              .child(
@@ -728,6 +759,28 @@ index 4d8d73c..058dc8a 100644
              ),
              SandboxError::SandboxProbeFailed => {
                  write!(
+diff --git a/crates/sandbox/src/windows_psec.rs b/crates/sandbox/src/windows_psec.rs
+index 06020bc..97547b5 100644
+--- a/crates/sandbox/src/windows_psec.rs
++++ b/crates/sandbox/src/windows_psec.rs
+@@ -258,7 +258,7 @@ pub(crate) fn wrap_invocation(
+     let launcher = launcher_path()?;
+     let launcher = launcher
+         .to_str()
+-        .ok_or_else(|| anyhow!("Zed CLI path is not valid UTF-8: {}", launcher.display()))?
++        .ok_or_else(|| anyhow!("Zeo CLI path is not valid UTF-8: {}", launcher.display()))?
+         .to_string();
+     let mut launcher_args = Vec::with_capacity(args.len() + 4);
+     launcher_args.push(LAUNCHER_FLAG.to_string());
+@@ -287,7 +287,7 @@ fn launcher_path() -> Result<PathBuf> {
+     // in the CLI executable.
+     let launcher = util::get_zed_cli_path()
+         .context("in a development build, run `cargo build -p cli`")
+-        .context("could not find the Zed CLI, which starts sandboxed commands")?;
++        .context("could not find the Zeo CLI, which starts sandboxed commands")?;
+     Ok(dunce::simplified(&launcher).to_path_buf())
+ }
+ 
 diff --git a/crates/sandbox_linux/src/helper.rs b/crates/sandbox_linux/src/helper.rs
 index bd318b8..72d6a07 100644
 --- a/crates/sandbox_linux/src/helper.rs

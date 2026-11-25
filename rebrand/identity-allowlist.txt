@@ -7,9 +7,6 @@ crates/release_channel/src/lib.rs	ReleaseChannel::Dev => "dev.zed.Zed-Dev",
 crates/release_channel/src/lib.rs	ReleaseChannel::Nightly => "dev.zed.Zed-Nightly",
 crates/release_channel/src/lib.rs	ReleaseChannel::Preview => "dev.zed.Zed-Preview",
 crates/release_channel/src/lib.rs	ReleaseChannel::Stable => "dev.zed.Zed",
-crates/sandbox/src/windows_wsl.rs	echo 'the downloaded zed tarball did not contain a libexec/zed-editor binary' >&2
-crates/sandbox/src/windows_wsl.rs	helper=$(find "$dest" -type f -path '*/libexec/zed-editor' -print 2>/dev/null | head -n 1 || true)
-crates/sandbox/src/windows_wsl.rs	helper_src=$(find "$tmp/unpacked" -type f -path '*/libexec/zed-editor' -print 2>/dev/null | head -n 1 || true)
 crates/zed/src/visual_test_runner.rs	let bar_zed = canonical_temp.join("code").join("bar").join("zed");
 crates/zed/src/visual_test_runner.rs	let baz_zed = canonical_temp.join("code").join("baz").join("zed");
 crates/zed/src/visual_test_runner.rs	let code_zed = canonical_temp.join("code").join("zed");
