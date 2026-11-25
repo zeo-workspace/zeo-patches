@@ -7174,10 +7174,10 @@ index 7c6e2c6..70925d9 100644
      selection: Option<&thread_view::PermissionSelection>,
      is_allow: bool,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index c6acd54..91d2a0b 100644
+index fbd439e..4c3e157 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -1595,7 +1595,7 @@ impl ThreadView {
+@@ -1606,7 +1606,7 @@ impl ThreadView {
      /// Resolves the message editor's contents into content blocks. For profiles
      /// that do not enable any tools, directory mentions are expanded to inline
      /// file contents since the agent can't read files on its own.
@@ -7186,7 +7186,7 @@ index c6acd54..91d2a0b 100644
          &self,
          message_editor: &Entity<MessageEditor>,
          cx: &mut App,
-@@ -2524,6 +2524,89 @@ impl ThreadView {
+@@ -2535,6 +2535,89 @@ impl ThreadView {
          self.send_content(contents_task, false, window, cx);
      }
  
@@ -7276,7 +7276,7 @@ index c6acd54..91d2a0b 100644
      pub fn send_content(
          &mut self,
          contents_task: Task<
-@@ -2533,6 +2616,23 @@ impl ThreadView {
+@@ -2544,6 +2627,23 @@ impl ThreadView {
          window: &mut Window,
          cx: &mut Context<Self>,
      ) {
@@ -7300,7 +7300,7 @@ index c6acd54..91d2a0b 100644
          let session_id = self.thread.read(cx).session_id().clone();
          let parent_session_id = self.thread.read(cx).parent_session_id().cloned();
          let agent_telemetry_id = self.thread.read(cx).connection().telemetry_id();
-@@ -2565,9 +2665,11 @@ impl ThreadView {
+@@ -2576,9 +2676,11 @@ impl ThreadView {
                  (!uses_reported_activity).then(|| this.start_turn(cx))
              })?;
  
@@ -7315,7 +7315,7 @@ index c6acd54..91d2a0b 100644
  
              let _ = this.update(cx, |this, cx| {
                  this.list_state.scroll_to_end();
-@@ -2645,6 +2747,9 @@ impl ThreadView {
+@@ -2656,6 +2758,9 @@ impl ThreadView {
                  }
              })?;
              let submission_id = send.id;
@@ -7325,7 +7325,7 @@ index c6acd54..91d2a0b 100644
  
              let _ = this.update(cx, |this, cx| {
                  this.current_submission = Some(submission_id);
-@@ -2772,94 +2877,14 @@ impl ThreadView {
+@@ -2783,94 +2888,14 @@ impl ThreadView {
          cx.notify();
      }
  
@@ -7427,7 +7427,7 @@ index c6acd54..91d2a0b 100644
  
          let agent_telemetry_id = self.thread.read(cx).connection().telemetry_id();
          let session_id = self.thread.read(cx).session_id().clone();
-@@ -2964,6 +2989,99 @@ impl ThreadView {
+@@ -2975,6 +3000,99 @@ impl ThreadView {
          );
      }
  
@@ -7527,7 +7527,7 @@ index c6acd54..91d2a0b 100644
      pub fn cancel_generation(&mut self, cx: &mut Context<Self>) {
          self.thread_retry_status.take();
          self.thread_error.take();
-@@ -16754,6 +16872,7 @@ pub(crate) fn open_link(
+@@ -16787,6 +16905,7 @@ pub(crate) fn open_link(
              MentionUri::TerminalSelection { .. } => {}
              MentionUri::GitDiff { .. } => {}
              MentionUri::MergeConflict { .. } => {}

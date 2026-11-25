@@ -351,10 +351,10 @@ index 0000000..9aac50a
 +    );
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 9fcee59..2a373df 100644
+index 86201de..e5d9967 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -7271,7 +7271,7 @@ impl ThreadView {
+@@ -7276,7 +7276,7 @@ impl ThreadView {
  
      /// Restarts the agent so a changed sandbox setting applies (§6.50). The thread is resumed
      /// on the new process; a turn in progress would be cut, so that case asks first.
