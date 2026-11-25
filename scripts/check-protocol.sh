@@ -52,7 +52,9 @@ readonly EXPECT_AUTH_HEADER='X-Claude-Code-Ide-Authorization'
 # where only minified naming moved -- which is why the code-shape clauses are
 # patterns and the rest are literals. Re-derived against 2.1.316 on 2026-11-03
 # (story 066), when clause 2 moved from the parser's output key to its input.
-readonly DERIVED_AGAINST='2.1.316'
+# Re-checked against 2.1.330 on 2026-11-25 (parity round 26): every clause held
+# unchanged, static and live, so only the version moved.
+readonly DERIVED_AGAINST='2.1.330'
 
 drift=0
 strings_file=""
