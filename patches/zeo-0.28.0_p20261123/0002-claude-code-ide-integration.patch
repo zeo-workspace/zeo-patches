@@ -80,9 +80,15 @@ name are invalid. The terminal environment is one helper,
 `insert_claude_code_ide_env`, called by all three terminal paths and tested.
 
 Protocol alignment with the VS Code extension (story 066, 2026-11-03, CLI 2.1.316):
-- `openDiff` answers `TAB_CLOSED` when the tab is closed without Keep or Reject,
-  and when its sender is dropped; only Reject answers `DIFF_REJECTED`. The CLI
-  then keeps its proposed edit unsaved instead of recording a rejection.
+- `openDiff` answered `TAB_CLOSED` when the tab was closed without Keep or
+  Reject. Corrected 2026-11-24 (parity round 26, item 236): every outcome but
+  Keep now answers `DIFF_REJECTED` followed by the tab name, as the VS Code
+  extension does for a closed tab and for an answer that can no longer reach
+  the CLI (2.1.325, 2.1.331). `TAB_CLOSED` was never a safe "no decision":
+  the CLI (2.1.330, 2.1.331) maps it to the proposed contents with
+  `saved: false`, sees a change, and -- unless its terminal prompt was answered
+  first -- takes it as an approval and writes the edit. Closing the tab
+  approved the change.
 - `selection_changed` is pushed: at most one per 100 ms per connection, the last
   state winning, and the current selection replayed 500 ms after a CLI connects,
   as VS Code does. Positions are 0-based (the CLI adds 1). A terminal or panel
@@ -267,10 +273,10 @@ index 0000000..2e424c1
 +zed_actions.workspace = true
 diff --git a/crates/claude_code_ide/README.md b/crates/claude_code_ide/README.md
 new file mode 100644
-index 0000000..91bdc69
+index 0000000..5cbee1e
 --- /dev/null
 +++ b/crates/claude_code_ide/README.md
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,80 @@
 +# claude_code_ide
 +
 +Native [Claude Code](https://docs.claude.com/en/docs/claude-code) IDE integration
@@ -299,9 +305,10 @@ index 0000000..91bdc69
 +- **Blocking accept/reject diffs** (`openDiff`): Claude's proposed change opens
 +  as a side-by-side diff tab, the view centers on the first change, and the CLI
 +  blocks until you click **Keep** (green) or **Reject** (red). It answers
-+  `FILE_SAVED` with the final contents on Keep, `DIFF_REJECTED` on Reject, and
-+  `TAB_CLOSED` when you close the tab without deciding -- the CLI then keeps its
-+  edit unsaved instead of recording a rejection, as with VS Code.
++  `FILE_SAVED` with the final contents on Keep, and `DIFF_REJECTED` (with the
++  tab name) on Reject or when you close the tab without deciding, as VS Code
++  does. Closing the tab is never an approval: the CLI writes the proposed edit
++  on `TAB_CLOSED`, so the integration does not send it.
 +
 +## How it works
 +
@@ -335,7 +342,7 @@ index 0000000..91bdc69
 +| `getDiagnostics` | Open buffers' diagnostics as VS Code shapes them (the CLI parses the answer to report what an edit broke): one compact JSON array, one entry per file; `uri` for one file (always listed), `minSeverity` to drop the milder ones, clean files left out without `uri`. |
 +| `openFile` | Open a path, optionally selecting a line range. |
 +| `saveDocument` / `checkDocumentDirty` | Save a buffer / query its dirty state. |
-+| `openDiff` | Blocking side-by-side diff: `FILE_SAVED`, `DIFF_REJECTED` or `TAB_CLOSED`. |
++| `openDiff` | Blocking side-by-side diff: `FILE_SAVED` or `DIFF_REJECTED`. |
 +
 +## Try it
 +
@@ -1406,10 +1413,10 @@ index 0000000..b1f01e1
 +}
 diff --git a/crates/claude_code_ide/src/open_diff.rs b/crates/claude_code_ide/src/open_diff.rs
 new file mode 100644
-index 0000000..bba215e
+index 0000000..a0ac1a1
 --- /dev/null
 +++ b/crates/claude_code_ide/src/open_diff.rs
-@@ -0,0 +1,319 @@
+@@ -0,0 +1,345 @@
 +//! The blocking `openDiff` tool.
 +//!
 +//! Shows Claude's proposed change as a side-by-side diff tab in Zed plus a
@@ -1417,9 +1424,12 @@ index 0000000..bba215e
 +//! return `FILE_SAVED` together with the final buffer contents and let the
 +//! Claude CLI perform the actual write (matching the official IDE protocol);
 +//! on Reject we return `DIFF_REJECTED` and discard the change. Closing the
-+//! tab without deciding returns `TAB_CLOSED`, as the VS Code extension does:
-+//! the CLI then keeps its proposed edit unsaved instead of recording a
-+//! rejection the user never made. The IDE
++//! tab without deciding, or an answer that can no longer reach the CLI, is a
++//! rejection too: `DIFF_REJECTED` followed by the tab name, as the VS Code
++//! extension answers both (2.1.325 and 2.1.331). `TAB_CLOSED` is not a safe
++//! "no decision": the CLI (2.1.330, 2.1.331) maps it to the proposed contents
++//! with `saved: false`, sees a change, and -- unless its terminal prompt was
++//! answered first -- takes it as an approval and writes the edit. The IDE
 +//! deliberately does *not* write the file itself, which would race the CLI's
 +//! own save.
 +
@@ -1641,7 +1651,7 @@ index 0000000..bba215e
 +        })
 +        .map_err(|error| ProtocolError::internal(error.to_string()))?;
 +
-+    Ok(diff_outcome(decision, final_contents))
++    Ok(diff_outcome(decision, final_contents, &tab_name))
 +}
 +
 +/// What ended a pending `openDiff`. The protocol answer for each lives in
@@ -1670,21 +1680,24 @@ index 0000000..bba215e
 +}
 +
 +// The official IDE protocol has the IDE return the accepted contents and the
-+// CLI perform the write, so the file is never written here.
++// CLI perform the write, so the file is never written here. Every outcome but
++// Keep is a rejection, carrying the tab name the way the VS Code extension's
++// answer does; see the module docs for why a closed tab is not `TAB_CLOSED`.
 +fn diff_outcome(
 +    decision: Result<DiffDecision, oneshot::Canceled>,
 +    final_contents: String,
++    tab_name: &str,
 +) -> Value {
 +    match decision {
 +        Ok(DiffDecision::Accepted) => json!({ "content": [
 +            { "type": "text", "text": "FILE_SAVED" },
 +            { "type": "text", "text": final_contents },
 +        ] }),
-+        Ok(DiffDecision::Rejected) => {
-+            json!({ "content": [{ "type": "text", "text": "DIFF_REJECTED" }] })
-+        }
-+        Ok(DiffDecision::Closed) | Err(oneshot::Canceled) => {
-+            json!({ "content": [{ "type": "text", "text": "TAB_CLOSED" }] })
++        Ok(DiffDecision::Rejected | DiffDecision::Closed) | Err(oneshot::Canceled) => {
++            json!({ "content": [
++                { "type": "text", "text": "DIFF_REJECTED" },
++                { "type": "text", "text": tab_name },
++            ] })
 +        }
 +    }
 +}
@@ -1705,28 +1718,48 @@ index 0000000..bba215e
 +            .unwrap_or_default()
 +    }
 +
++    // A closed tab must never read as an approval: the CLI writes the proposed
++    // edit on `TAB_CLOSED` (see the module docs), so no outcome but Keep may
++    // answer it.
 +    #[test]
-+    fn open_diff_closed_tab_answers_tab_closed() {
-+        let value = diff_outcome(Ok(DiffDecision::Closed), "proposed".to_owned());
-+        assert_eq!(texts(&value), ["TAB_CLOSED"]);
++    fn open_diff_closed_tab_answers_diff_rejected() {
++        let value = diff_outcome(Ok(DiffDecision::Closed), "proposed".to_owned(), "tab");
++        assert_eq!(texts(&value), ["DIFF_REJECTED", "tab"]);
 +    }
 +
 +    #[test]
-+    fn open_diff_dropped_sender_answers_tab_closed() {
-+        let value = diff_outcome(Err(oneshot::Canceled), "proposed".to_owned());
-+        assert_eq!(texts(&value), ["TAB_CLOSED"]);
++    fn open_diff_dropped_sender_answers_diff_rejected() {
++        let value = diff_outcome(Err(oneshot::Canceled), "proposed".to_owned(), "tab");
++        assert_eq!(texts(&value), ["DIFF_REJECTED", "tab"]);
 +    }
 +
 +    #[test]
-+    fn open_diff_reject_still_answers_diff_rejected() {
-+        let value = diff_outcome(Ok(DiffDecision::Rejected), "proposed".to_owned());
-+        assert_eq!(texts(&value), ["DIFF_REJECTED"]);
++    fn open_diff_reject_answers_diff_rejected_with_the_tab_name() {
++        let value = diff_outcome(Ok(DiffDecision::Rejected), "proposed".to_owned(), "tab");
++        assert_eq!(texts(&value), ["DIFF_REJECTED", "tab"]);
 +    }
 +
 +    #[test]
 +    fn open_diff_keep_still_answers_file_saved_with_the_contents() {
-+        let value = diff_outcome(Ok(DiffDecision::Accepted), "edited by the user".to_owned());
++        let value = diff_outcome(
++            Ok(DiffDecision::Accepted),
++            "edited by the user".to_owned(),
++            "tab",
++        );
 +        assert_eq!(texts(&value), ["FILE_SAVED", "edited by the user"]);
++    }
++
++    #[test]
++    fn open_diff_never_answers_tab_closed() {
++        for decision in [
++            Ok(DiffDecision::Accepted),
++            Ok(DiffDecision::Rejected),
++            Ok(DiffDecision::Closed),
++            Err(oneshot::Canceled),
++        ] {
++            let value = diff_outcome(decision, "proposed".to_owned(), "tab");
++            assert_ne!(texts(&value).first(), Some(&"TAB_CLOSED"));
++        }
 +    }
 +}
 diff --git a/crates/claude_code_ide/src/selection.rs b/crates/claude_code_ide/src/selection.rs
