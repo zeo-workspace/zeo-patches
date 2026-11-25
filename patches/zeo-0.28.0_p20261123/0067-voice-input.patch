@@ -111,10 +111,10 @@ reqwest_client without_proxy.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 37a28a4..3b568c9 100644
+index 10accfc..b3fbb2d 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -555,6 +555,7 @@ dependencies = [
+@@ -557,6 +557,7 @@ dependencies = [
   "command_palette_hooks",
   "component",
   "context_server",
@@ -122,7 +122,7 @@ index 37a28a4..3b568c9 100644
   "db",
   "editor",
   "eval_utils",
-@@ -633,6 +634,7 @@ dependencies = [
+@@ -635,6 +636,7 @@ dependencies = [
   "util",
   "uuid",
   "vim",
@@ -130,7 +130,7 @@ index 37a28a4..3b568c9 100644
   "watch",
   "workspace",
   "zed_actions",
-@@ -2309,6 +2311,8 @@ dependencies = [
+@@ -2312,6 +2314,8 @@ dependencies = [
   "cexpr",
   "clang-sys",
   "itertools 0.13.0",
@@ -139,7 +139,7 @@ index 37a28a4..3b568c9 100644
   "proc-macro2",
   "quote",
   "regex",
-@@ -20027,6 +20031,30 @@ dependencies = [
+@@ -20030,6 +20034,30 @@ dependencies = [
   "settings",
  ]
  
@@ -170,7 +170,7 @@ index 37a28a4..3b568c9 100644
  [[package]]
  name = "vscode_theme"
  version = "0.2.0"
-@@ -21118,6 +21146,29 @@ dependencies = [
+@@ -21121,6 +21149,29 @@ dependencies = [
   "zed_actions",
  ]
  
@@ -200,7 +200,7 @@ index 37a28a4..3b568c9 100644
  [[package]]
  name = "whoami"
  version = "1.6.1"
-@@ -22958,6 +23009,7 @@ dependencies = [
+@@ -22961,6 +23012,7 @@ dependencies = [
   "uuid",
   "vim",
   "vim_mode_setting",
@@ -475,7 +475,7 @@ index 758e642..12bf917 100644
    // toggled at runtime.
    "instrumentation": {
 diff --git a/crates/agent_ui/Cargo.toml b/crates/agent_ui/Cargo.toml
-index 831393d..19b5ad2 100644
+index 4acbe19..6245968 100644
 --- a/crates/agent_ui/Cargo.toml
 +++ b/crates/agent_ui/Cargo.toml
 @@ -116,6 +116,7 @@ unicode-segmentation.workspace = true
@@ -486,7 +486,7 @@ index 831393d..19b5ad2 100644
  watch.workspace = true
  workspace.workspace = true
  git_ui_core.workspace = true
-@@ -130,6 +131,7 @@ agent = { workspace = true, features = ["test-support"] }
+@@ -131,6 +132,7 @@ agent = { workspace = true, features = ["test-support"] }
  agent_servers = { workspace = true, features = ["test-support"] }
  buffer_diff = { workspace = true, features = ["test-support"] }
  client = { workspace = true, features = ["test-support"] }

@@ -102,10 +102,10 @@ where the listener that calls it is not built; the tests keep using it.
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index 9d320d0..b1a164a 100644
+index c732dc8..652d74b 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -575,6 +575,7 @@ dependencies = [
+@@ -577,6 +577,7 @@ dependencies = [
   "http_client",
   "idna",
   "image",
@@ -113,7 +113,7 @@ index 9d320d0..b1a164a 100644
   "indoc",
   "itertools 0.14.0",
   "jsonschema",
-@@ -615,6 +616,7 @@ dependencies = [
+@@ -617,6 +618,7 @@ dependencies = [
   "serde_json_lenient",
   "settings",
   "shlex 2.0.1",
@@ -121,7 +121,7 @@ index 9d320d0..b1a164a 100644
   "streaming_diff",
   "task",
   "telemetry",
-@@ -23144,6 +23146,18 @@ version = "0.3.3"
+@@ -23147,6 +23149,18 @@ version = "0.3.3"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524"
  
@@ -604,7 +604,7 @@ index 6369245..f8be8b5 100644
  
                      language_model::MessageContent::Text(uri.as_link().to_string())
 diff --git a/crates/agent_ui/Cargo.toml b/crates/agent_ui/Cargo.toml
-index 7a8659c..831393d 100644
+index 2a5398d..4acbe19 100644
 --- a/crates/agent_ui/Cargo.toml
 +++ b/crates/agent_ui/Cargo.toml
 @@ -101,6 +101,7 @@ serde.workspace = true
@@ -622,7 +622,7 @@ index 7a8659c..831393d 100644
 +indexmap.workspace = true
  reqwest_client = { workspace = true, optional = true }
  
- [dev-dependencies]
+ zeo_i18n.workspace = true
 diff --git a/crates/agent_ui/src/agent_ui.rs b/crates/agent_ui/src/agent_ui.rs
 index 2332ba9..8af4250 100644
 --- a/crates/agent_ui/src/agent_ui.rs

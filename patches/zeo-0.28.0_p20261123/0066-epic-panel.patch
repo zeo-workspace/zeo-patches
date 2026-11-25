@@ -98,10 +98,10 @@ the fs symlink log line).
 ---
 
 diff --git a/Cargo.lock b/Cargo.lock
-index b1a164a..37a28a4 100644
+index 652d74b..10accfc 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -5868,6 +5868,30 @@ dependencies = [
+@@ -5871,6 +5871,30 @@ dependencies = [
   "serde",
  ]
  
@@ -132,7 +132,7 @@ index b1a164a..37a28a4 100644
  [[package]]
  name = "equator"
  version = "0.4.2"
-@@ -22819,6 +22843,7 @@ dependencies = [
+@@ -22822,6 +22846,7 @@ dependencies = [
   "editor",
   "encoding_selector",
   "env_logger 0.11.8",

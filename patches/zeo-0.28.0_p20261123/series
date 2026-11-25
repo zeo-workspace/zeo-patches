@@ -847,6 +847,10 @@
 # the first translated screen. Its English is the page's own, byte for byte. In this group
 # because every file it edits is the group's own.
 0178-settings-ui-the-agent-sandbox-page-speaks-pt-br.patch
+# 0179: the jail's messages outside the page -- refused starts and entries, the Turn Off /
+# Forget / Allow dialogs, the thread's lock and quick modal, the MCP notice -- in en-US and
+# pt-BR. On 0178.
+0179-agent-sandbox-agent-ui-agent-servers-the-jail-s-messages-and-dialogs-speak-pt-br.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
