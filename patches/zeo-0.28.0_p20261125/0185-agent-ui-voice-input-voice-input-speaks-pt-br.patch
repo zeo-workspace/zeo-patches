@@ -222,7 +222,7 @@ index d9f1b39..0f2460a 100644
      }
  }
 diff --git a/crates/voice_input/src/remote.rs b/crates/voice_input/src/remote.rs
-index 5927a7e..61f1464 100644
+index 5927a7e..cd3f7ef 100644
 --- a/crates/voice_input/src/remote.rs
 +++ b/crates/voice_input/src/remote.rs
 @@ -12,6 +12,7 @@ use http_client::http::HeaderValue;
@@ -283,7 +283,7 @@ index 5927a7e..61f1464 100644
 +            Err(anyhow!(t!(
 +                "voice-remote-timeout",
 +                seconds = timeout.as_secs_f64(),
-+                host = &*shown
++                host = shown
 +            )))
          }
      };
@@ -310,8 +310,8 @@ index 5927a7e..61f1464 100644
 -            ));
 +            return Err(anyhow!(t!(
 +                "voice-remote-unreachable",
-+                host = &*shown,
-+                error = scrub(&error, shown).to_string()
++                host = shown,
++                error = scrub(&error, shown)
 +            )));
          }
      };
@@ -321,13 +321,13 @@ index 5927a7e..61f1464 100644
          let status = status.as_u16();
          if excerpt.is_empty() {
 -            bail!("Remote transcription failed: HTTP {status} from {shown}");
-+            bail!(t!("voice-remote-http", status = status, host = &*shown));
++            bail!(t!("voice-remote-http", status = status, host = shown));
          }
 -        bail!("Remote transcription failed: HTTP {status} from {shown}: {excerpt}");
 +        bail!(t!(
 +            "voice-remote-http-excerpt",
 +            status = status,
-+            host = &*shown,
++            host = shown,
 +            excerpt = excerpt
 +        ));
      }
@@ -343,8 +343,8 @@ index 5927a7e..61f1464 100644
 -        ));
 +        return Err(anyhow!(t!(
 +            "voice-remote-read",
-+            host = &*shown,
-+            error = scrub(&anyhow::Error::from(error), shown).to_string()
++            host = shown,
++            error = scrub(&anyhow::Error::from(error), shown)
 +        )));
      }
      if bytes.len() > ANSWER_LIMIT {
@@ -352,7 +352,7 @@ index 5927a7e..61f1464 100644
 -        bail!(
 -            "Remote transcription failed: the transcription answer of {shown} is larger than 1 MiB"
 -        );
-+        bail!(t!("voice-remote-too-large", host = &*shown));
++        bail!(t!("voice-remote-too-large", host = shown));
      }
      match serde_json::from_slice::<Answer>(&bytes) {
          Ok(answer) => Ok(answer.text),
@@ -361,12 +361,12 @@ index 5927a7e..61f1464 100644
 -            Err(anyhow::Error::from(error).context(format!(
 -                "Remote transcription failed: {shown} did not answer with a JSON `text` field"
 -            )))
-+            Err(anyhow::Error::from(error).context(t!("voice-remote-no-text", host = &*shown)))
++            Err(anyhow::Error::from(error).context(t!("voice-remote-no-text", host = shown)))
          }
      }
  }
 diff --git a/crates/voice_input/src/state.rs b/crates/voice_input/src/state.rs
-index 9ab0e6a..b6f5941 100644
+index 9ab0e6a..2abff5d 100644
 --- a/crates/voice_input/src/state.rs
 +++ b/crates/voice_input/src/state.rs
 @@ -110,10 +110,10 @@ impl Default for Machine {
@@ -391,7 +391,7 @@ index 9ab0e6a..b6f5941 100644
 -                    vec![notify(owner, format!("{NO_MICROPHONE}: {reason}"))]
 +                    vec![notify(
 +                        owner,
-+                        zeo_i18n::t!("voice-no-microphone", reason = reason.to_string()),
++                        zeo_i18n::t!("voice-no-microphone", reason = reason),
 +                    )]
                  }
                  _ => Vec::new(),
@@ -403,7 +403,7 @@ index 9ab0e6a..b6f5941 100644
 +            Input::CaptureLimit => self.stop_with_notice(now, zeo_i18n::t!("voice-limit-reached")),
 +            Input::CaptureDeviceError(reason) => self.stop_with_notice(
 +                now,
-+                zeo_i18n::t!("voice-microphone-stopped", reason = reason.to_string()),
++                zeo_i18n::t!("voice-microphone-stopped", reason = reason),
 +            ),
              Input::Transcribed { text } => match self.phase {
                  Phase::Transcribing { owner } => {
