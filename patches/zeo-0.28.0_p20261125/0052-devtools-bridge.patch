@@ -565,7 +565,7 @@ index 446e4d3..fd27498 100644
  
                      language_model::MessageContent::Text(uri.as_link().to_string())
 diff --git a/crates/agent_ui/src/agent_panel.rs b/crates/agent_ui/src/agent_panel.rs
-index e52cb32..1f39763 100644
+index 40fc515..f6bbe99 100644
 --- a/crates/agent_ui/src/agent_panel.rs
 +++ b/crates/agent_ui/src/agent_panel.rs
 @@ -2690,6 +2690,34 @@ impl AgentPanel {
@@ -603,7 +603,7 @@ index e52cb32..1f39763 100644
      fn set_selected_agent_and_persist(&mut self, agent: Agent, cx: &mut Context<Self>) {
          if self.selected_agent != agent {
              self.selected_agent = agent.clone();
-@@ -7966,6 +7994,19 @@ impl AgentPanel {
+@@ -7965,6 +7993,19 @@ impl AgentPanel {
          self.set_base_view(thread.into(), true, window, cx);
      }
  
@@ -693,7 +693,7 @@ index 0ef3979..8514316 100644
  mod tests {
      use super::*;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index b1f4d75..0aeb832 100644
+index 8a27f06..e52d5bc 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -16552,6 +16552,20 @@ pub(crate) fn open_link(

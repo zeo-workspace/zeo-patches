@@ -334,7 +334,7 @@ index 1c85425..aca74d7 100644
  pub mod agent_jail_status;
  mod agent_panel;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index e5d9967..50be92b 100644
+index 419a021..2471419 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -7226,9 +7226,14 @@ impl ThreadView {

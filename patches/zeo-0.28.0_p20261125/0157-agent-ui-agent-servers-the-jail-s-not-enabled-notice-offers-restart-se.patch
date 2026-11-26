@@ -87,7 +87,7 @@ index 2798ea5..1d3d91f 100644
          .expect("a notice");
      assert_eq!(
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 4ca1a9b..1e1fd19 100644
+index b4b0d9e..59ad663 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -15356,6 +15356,8 @@ impl ThreadView {

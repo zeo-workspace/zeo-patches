@@ -2373,7 +2373,7 @@ index 0000000..324eecf
 +    assert_eq!(plain.clone().with_cpu_reservation(None), plain);
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index ccbbcb0..4ca1a9b 100644
+index 09e033d..b4b0d9e 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -7172,8 +7172,14 @@ impl ThreadView {

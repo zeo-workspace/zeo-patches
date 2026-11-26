@@ -351,7 +351,7 @@ index 0000000..9aac50a
 +    );
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 86201de..e5d9967 100644
+index 3484900..419a021 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -7276,7 +7276,7 @@ impl ThreadView {

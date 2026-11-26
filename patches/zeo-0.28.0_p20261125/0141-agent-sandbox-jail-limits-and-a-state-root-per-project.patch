@@ -2673,7 +2673,7 @@ index 8cf4e35..145d2b0 100644
                                  login,
                                  workspace,
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index ab41586..ccbbcb0 100644
+index 75712b1..09e033d 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -7174,10 +7174,55 @@ impl ThreadView {

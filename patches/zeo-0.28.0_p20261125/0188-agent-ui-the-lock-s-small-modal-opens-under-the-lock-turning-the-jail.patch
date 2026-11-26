@@ -71,7 +71,7 @@ index ba0915b..c12d22a 100644
  pub fn confirm_forget(path: &str, window: &mut Window, cx: &mut App) -> Task<bool> {
      let message = t!("agent-jail-confirm-forget", path = path);
 diff --git a/crates/agent_ui/src/agent_jail_quick_modal.rs b/crates/agent_ui/src/agent_jail_quick_modal.rs
-index 03ef079..92b052f 100644
+index 03ef079..efac9a0 100644
 --- a/crates/agent_ui/src/agent_jail_quick_modal.rs
 +++ b/crates/agent_ui/src/agent_jail_quick_modal.rs
 @@ -3,31 +3,61 @@
@@ -138,7 +138,7 @@ index 03ef079..92b052f 100644
              focus_handle: cx.focus_handle(),
              // The switch shows the setting of now: a change saved from here, or from the page in
              // another window, redraws it.
-@@ -37,11 +67,84 @@ impl AgentJailQuickModal {
+@@ -37,11 +67,87 @@ impl AgentJailQuickModal {
  
      /// Whether the next start of this thread's agent would be jailed, as the lock reads it.
      pub fn jail_on(&self, cx: &App) -> bool {
@@ -164,8 +164,11 @@ index 03ef079..92b052f 100644
 +            .map(|name| name.to_string_lossy().into_owned())
 +            .unwrap_or_else(|| self.root.to_string_lossy().into_owned());
 +        let consent = agent_sandbox::confirm::confirm_turn_on_and_restart(&name, window, cx);
-+        let (agent_id, root, restart) =
-+            (self.agent_id.clone(), self.root.clone(), self.restart.clone());
++        let (agent_id, root, restart) = (
++            self.agent_id.clone(),
++            self.root.clone(),
++            self.restart.clone(),
++        );
 +        window
 +            .spawn(cx, async move |cx| {
 +                if !consent.await {
@@ -227,7 +230,7 @@ index 03ef079..92b052f 100644
      }
  
      fn open_advanced(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-@@ -68,25 +171,16 @@ impl Focusable for AgentJailQuickModal {
+@@ -68,25 +174,16 @@ impl Focusable for AgentJailQuickModal {
  
  impl Render for AgentJailQuickModal {
      fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -258,7 +261,7 @@ index 03ef079..92b052f 100644
          )
          .tab_index(0);
 diff --git a/crates/agent_ui/src/agent_jail_quick_modal_tests.rs b/crates/agent_ui/src/agent_jail_quick_modal_tests.rs
-index 2936b08..3659efa 100644
+index 2936b08..05bcd01 100644
 --- a/crates/agent_ui/src/agent_jail_quick_modal_tests.rs
 +++ b/crates/agent_ui/src/agent_jail_quick_modal_tests.rs
 @@ -33,12 +33,41 @@ fn record_opened_pages(cx: &mut TestAppContext) -> Arc<Mutex<Vec<String>>> {
@@ -314,7 +317,7 @@ index 2936b08..3659efa 100644
  }
  
  #[gpui::test]
-@@ -97,3 +126,88 @@ async fn quick_modal_switch_follows_the_setting(cx: &mut TestAppContext) {
+@@ -97,3 +126,98 @@ async fn quick_modal_switch_follows_the_setting(cx: &mut TestAppContext) {
          "the switch reads the setting of now"
      );
  }
@@ -356,10 +359,17 @@ index 2936b08..3659efa 100644
 +    let before = thread_on_screen(&mut win);
 +    click(&mut win, "ICON-LockOff");
 +    click(&mut win, "agent-jail-quick-switch");
-+    assert!(win.cx.has_pending_prompt(), "turning the jail on asks first");
++    assert!(
++        win.cx.has_pending_prompt(),
++        "turning the jail on asks first"
++    );
 +    win.cx.simulate_prompt_answer("Cancel");
 +    win.cx.run_until_parked();
-+    assert_eq!(thread_on_screen(&mut win), before, "Cancel restarts nothing");
++    assert_eq!(
++        thread_on_screen(&mut win),
++        before,
++        "Cancel restarts nothing"
++    );
 +    let saved = fs
 +        .load(paths::settings_file().as_path())
 +        .await
@@ -385,7 +395,10 @@ index 2936b08..3659efa 100644
 +        .load(paths::settings_file().as_path())
 +        .await
 +        .expect("the switch saved the settings file");
-+    assert!(saved.contains("\"enabled\": true"), "the project is on: {saved}");
++    assert!(
++        saved.contains("\"enabled\": true"),
++        "the project is on: {saved}"
++    );
 +    // The settings file's watcher has handed the saved value back by now (the test settings
 +    // store reloads it): the restart waits for that, so the new agent starts inside the jail.
 +    let jailed = win.cx.update(|_, cx| {
@@ -534,21 +547,22 @@ index cbd0fa3..b07ab03 100644
          // so Resume goes on with nothing lost. The kill switch beside it ends the jail.
          .when_some(on_pause, |this, on_pause| {
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 1796682..fbd439e 100644
+index ebbf697..b28b89b 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -819,6 +819,10 @@ pub struct ThreadView {
+@@ -819,6 +819,11 @@ pub struct ThreadView {
      /// An interruption prompt (Stop Generation, Stop Subagent) is on screen, so a second click,
      /// Escape or Cancel opens no second one (operator ask of 2026-11-23).
      interrupt_confirmation_open: bool,
 +    /// The lock's small modal, a popover under the lock (operator, 2026-11-25).
 +    jail_quick_menu: PopoverMenuHandle<crate::agent_jail_quick_modal::AgentJailQuickModal>,
 +    /// The popover last built, so a test can read its switch.
-+    jail_quick_modal: Rc<RefCell<Option<WeakEntity<crate::agent_jail_quick_modal::AgentJailQuickModal>>>>,
++    jail_quick_modal:
++        Rc<RefCell<Option<WeakEntity<crate::agent_jail_quick_modal::AgentJailQuickModal>>>>,
      question_queue: QuestionQueue,
      /// The pending question card is minimized to its bar (Zeo next proposal §5.5). Per
      /// thread, and back to open once no question is pending, so the next one shows.
-@@ -1401,6 +1405,8 @@ impl ThreadView {
+@@ -1401,6 +1406,8 @@ impl ThreadView {
              elicitation_form_states: HashMap::default(),
              open_decline_confirmations: HashSet::default(),
              interrupt_confirmation_open: false,
@@ -557,7 +571,7 @@ index 1796682..fbd439e 100644
              question_queue: QuestionQueue::default(),
              question_card_minimized: false,
              auto_scroll_paused_at: None,
-@@ -7228,12 +7234,12 @@ impl ThreadView {
+@@ -7228,12 +7235,12 @@ impl ThreadView {
          };
          // Ask 15 of 2026-11-23: an agent started outside the jail opens the small modal -- this
          // project's switch and Advanced -- instead of the whole page.
@@ -573,7 +587,7 @@ index 1796682..fbd439e 100644
              on_pause,
              on_stop,
          );
-@@ -7278,20 +7284,42 @@ impl ThreadView {
+@@ -7278,20 +7285,42 @@ impl ThreadView {
          )
      }
  

@@ -49,7 +49,7 @@ In the claude-agent-acp-plus group, at its end.
 ---
 
 diff --git a/crates/agent_ui/src/agent_panel.rs b/crates/agent_ui/src/agent_panel.rs
-index fcd7814..e52cb32 100644
+index fcd7814..40fc515 100644
 --- a/crates/agent_ui/src/agent_panel.rs
 +++ b/crates/agent_ui/src/agent_panel.rs
 @@ -6795,6 +6795,7 @@ impl AgentPanel {
@@ -60,40 +60,39 @@ index fcd7814..e52cb32 100644
                                      menu = menu.entry("Open Thread as Markdown", None, {
                                          move |window, cx| {
                                              if let Some(workspace) = workspace.upgrade() {
-@@ -6808,6 +6809,20 @@ impl AgentPanel {
+@@ -6808,6 +6809,19 @@ impl AgentPanel {
                                              }
                                          }
                                      });
 +                                    // Operator, 2026-11-25: a summary of the session to copy,
 +                                    // or to start a new thread or a sub-thread from.
-+                                    menu = menu.entry(
-+                                        zeo_i18n::t!("agent-summary-menu"),
-+                                        None,
-+                                        {
-+                                            let thread_view = root_thread_view_for_summary.clone();
-+                                            move |_window, cx| {
-+                                                thread_view.update(cx, |thread_view, cx| {
++                                    // Zed's menu, so English like its other entries.
++                                    menu = menu.entry("Summarize Session", None, {
++                                        move |_window, cx| {
++                                            root_thread_view_for_summary.update(
++                                                cx,
++                                                |thread_view, cx| {
 +                                                    thread_view.show_session_summary(cx)
-+                                                });
-+                                            }
-+                                        },
-+                                    );
++                                                },
++                                            );
++                                        }
++                                    });
                                  }
                              }
  
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index c3fdabc..b1f4d75 100644
+index c3fdabc..8a27f06 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -593,6 +593,8 @@ mod pinned_message;
+@@ -592,6 +592,8 @@ mod context_usage_report;
+ mod pinned_message;
  mod queue_side_question;
  mod queue_steering;
- mod side_question_card;
 +mod session_digest;
 +mod session_summary;
+ mod side_question_card;
  mod tool_card_state;
  use tool_card_state::wrap_title;
- 
 @@ -835,6 +837,8 @@ pub struct ThreadView {
      context_usage_card: Option<context_usage_card::ContextUsageCard>,
      /// §6.8: the `/btw` card, while it is open.
@@ -130,10 +129,10 @@ index c3fdabc..b1f4d75 100644
  
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/session_digest.rs b/crates/agent_ui/src/conversation_view/thread_view/session_digest.rs
 new file mode 100644
-index 0000000..d2d8169
+index 0000000..7828338
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/session_digest.rs
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,194 @@
 +//! The session summary's local half (operator, 2026-11-25): what the thread holds, put in order
 +//! without asking the agent -- no tokens, the same input always gives the same text. It is an
 +//! index of the session, not a synthesis; the agent's summary (`/btw`) is the synthesis.
@@ -192,11 +191,7 @@ index 0000000..d2d8169
 +}
 +
 +/// The digest as Markdown: the title, then only the sections that have something.
-+pub(crate) fn render_digest(
-+    title: &str,
-+    items: &[DigestItem],
-+    plan: &[DigestPlanStep],
-+) -> String {
++pub(crate) fn render_digest(title: &str, items: &[DigestItem], plan: &[DigestPlanStep]) -> String {
 +    let mut out = String::new();
 +    let _ = writeln!(out, "# Session summary: {}", one_line(title));
 +
@@ -249,9 +244,21 @@ index 0000000..d2d8169
 +            },
 +        }
 +    }
-+    list_section(&mut out, "Files changed", changed.iter().map(|path| format!("`{path}`")));
-+    list_section(&mut out, "Commands run", commands.iter().map(|title| one_line(title)));
-+    list_section(&mut out, "Failed", failed.iter().map(|title| one_line(title)));
++    list_section(
++        &mut out,
++        "Files changed",
++        changed.iter().map(|path| format!("`{path}`")),
++    );
++    list_section(
++        &mut out,
++        "Commands run",
++        commands.iter().map(|title| one_line(title)),
++    );
++    list_section(
++        &mut out,
++        "Failed",
++        failed.iter().map(|title| one_line(title)),
++    );
 +
 +    let mut pending: Vec<String> = plan
 +        .iter()
@@ -261,7 +268,10 @@ index 0000000..d2d8169
 +            format!("{}{marker}", one_line(&step.text))
 +        })
 +        .collect();
-+    pending.extend(open.iter().map(|title| format!("{} (still running)", one_line(title))));
++    pending.extend(
++        open.iter()
++            .map(|title| format!("{} (still running)", one_line(title))),
++    );
 +    if !plan.is_empty() {
 +        let _ = writeln!(out, "\n## Plan");
 +        for step in plan {
@@ -270,7 +280,11 @@ index 0000000..d2d8169
 +        }
 +    }
 +    list_section(&mut out, "Open", pending.into_iter());
-+    list_section(&mut out, "Files read", read.iter().map(|path| format!("`{path}`")));
++    list_section(
++        &mut out,
++        "Files read",
++        read.iter().map(|path| format!("`{path}`")),
++    );
 +
 +    let compactions = items
 +        .iter()
@@ -315,10 +329,10 @@ index 0000000..d2d8169
 +mod tests;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/session_digest_tests.rs b/crates/agent_ui/src/conversation_view/thread_view/session_digest_tests.rs
 new file mode 100644
-index 0000000..2d39000
+index 0000000..e80a306
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/session_digest_tests.rs
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,163 @@
 +// The session summary's local half (operator, 2026-11-25). Hostile halves first: a failed or
 +// refused edit is not a changed file; thoughts are not the last answer; an empty session has
 +// only its title; a long request is cut, never split inside a character.
@@ -336,33 +350,69 @@ index 0000000..2d39000
 +
 +#[test]
 +fn digest_of_an_empty_session_is_its_title_only() {
-+    assert_eq!(render_digest("New Thread", &[], &[]), "# Session summary: New Thread\n");
++    assert_eq!(
++        render_digest("New Thread", &[], &[]),
++        "# Session summary: New Thread\n"
++    );
 +}
 +
 +#[test]
 +fn digest_lists_only_edits_that_landed() {
 +    let items = [
 +        DigestItem::Request("Fix the parser".into()),
-+        tool("Edit src/a.rs", DigestToolKind::Edit, DigestOutcome::Done, &["src/a.rs"]),
-+        tool("Edit src/b.rs", DigestToolKind::Edit, DigestOutcome::Failed, &["src/b.rs"]),
-+        tool("Edit src/c.rs", DigestToolKind::Edit, DigestOutcome::Refused, &["src/c.rs"]),
-+        tool("Edit src/a.rs", DigestToolKind::Edit, DigestOutcome::Done, &["src/a.rs"]),
++        tool(
++            "Edit src/a.rs",
++            DigestToolKind::Edit,
++            DigestOutcome::Done,
++            &["src/a.rs"],
++        ),
++        tool(
++            "Edit src/b.rs",
++            DigestToolKind::Edit,
++            DigestOutcome::Failed,
++            &["src/b.rs"],
++        ),
++        tool(
++            "Edit src/c.rs",
++            DigestToolKind::Edit,
++            DigestOutcome::Refused,
++            &["src/c.rs"],
++        ),
++        tool(
++            "Edit src/a.rs",
++            DigestToolKind::Edit,
++            DigestOutcome::Done,
++            &["src/a.rs"],
++        ),
 +        DigestItem::Answer("Fixed.".into()),
 +    ];
 +    let digest = render_digest("Parser", &items, &[]);
-+    assert!(digest.contains("## Files changed\n- `src/a.rs`\n"), "{digest}");
-+    assert!(!digest.contains("src/c.rs"), "a refused edit changed nothing: {digest}");
++    assert!(
++        digest.contains("## Files changed\n- `src/a.rs`\n"),
++        "{digest}"
++    );
++    assert!(
++        !digest.contains("src/c.rs"),
++        "a refused edit changed nothing: {digest}"
++    );
 +    let changed = digest
 +        .split("## Files changed\n")
 +        .nth(1)
 +        .and_then(|rest| rest.split("\n## ").next())
 +        .expect("the section");
-+    assert!(!changed.contains("src/b.rs"), "a failed edit changed nothing: {digest}");
++    assert!(
++        !changed.contains("src/b.rs"),
++        "a failed edit changed nothing: {digest}"
++    );
 +    assert!(
 +        digest.contains("## Failed\n- Edit src/b.rs\n"),
 +        "a failed edit is listed as failed, not changed: {digest}"
 +    );
-+    assert_eq!(digest.matches("src/a.rs").count(), 1, "each file once: {digest}");
++    assert_eq!(
++        digest.matches("src/a.rs").count(),
++        1,
++        "each file once: {digest}"
++    );
 +}
 +
 +#[test]
@@ -379,7 +429,10 @@ index 0000000..2d39000
 +        digest.contains("## Requests\n1. first with two lines\n2. second\n"),
 +        "{digest}"
 +    );
-+    assert!(digest.contains("## Last answer\nthe final answer\n"), "{digest}");
++    assert!(
++        digest.contains("## Last answer\nthe final answer\n"),
++        "{digest}"
++    );
 +    assert!(!digest.contains("an early answer"), "{digest}");
 +}
 +
@@ -398,12 +451,25 @@ index 0000000..2d39000
 +        },
 +    ];
 +    let items = [
-+        tool("cargo test", DigestToolKind::Execute, DigestOutcome::Done, &[]),
-+        tool("cargo build", DigestToolKind::Execute, DigestOutcome::Open, &[]),
++        tool(
++            "cargo test",
++            DigestToolKind::Execute,
++            DigestOutcome::Done,
++            &[],
++        ),
++        tool(
++            "cargo build",
++            DigestToolKind::Execute,
++            DigestOutcome::Open,
++            &[],
++        ),
 +        DigestItem::Compaction,
 +    ];
 +    let digest = render_digest("T", &items, &plan);
-+    assert!(digest.contains("## Commands run\n- cargo test\n"), "{digest}");
++    assert!(
++        digest.contains("## Commands run\n- cargo test\n"),
++        "{digest}"
++    );
 +    assert!(
 +        digest.contains("## Plan\n- [x] Write the test\n- [ ] Make it pass\n"),
 +        "{digest}"
@@ -419,16 +485,23 @@ index 0000000..2d39000
 +fn digest_cuts_a_long_request_on_a_character() {
 +    let long = "é".repeat(EXCERPT_MAX_CHARS + 10);
 +    let digest = render_digest("T", &[DigestItem::Request(long)], &[]);
-+    let line = digest.lines().find(|line| line.starts_with("1. ")).expect("the request");
-+    assert_eq!(line.chars().count(), 3 + EXCERPT_MAX_CHARS + 1, "cut, with an ellipsis");
++    let line = digest
++        .lines()
++        .find(|line| line.starts_with("1. "))
++        .expect("the request");
++    assert_eq!(
++        line.chars().count(),
++        3 + EXCERPT_MAX_CHARS + 1,
++        "cut, with an ellipsis"
++    );
 +    assert!(line.ends_with('…'));
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs b/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs
 new file mode 100644
-index 0000000..f85d0d1
+index 0000000..e3d9558
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs
-@@ -0,0 +1,443 @@
+@@ -0,0 +1,481 @@
 +//! The session summary card (operator, 2026-11-25): a precise, ordered account of the session,
 +//! to copy or to start a new thread or a sub-thread from.
 +//!
@@ -517,9 +590,7 @@ index 0000000..f85d0d1
 +                    .chunks
 +                    .iter()
 +                    .filter_map(|chunk| match chunk {
-+                        AssistantMessageChunk::Message { block, .. } => {
-+                            Some(block.to_markdown(cx))
-+                        }
++                        AssistantMessageChunk::Message { block, .. } => Some(block.to_markdown(cx)),
 +                        AssistantMessageChunk::Thought { .. } => None,
 +                    })
 +                    .collect();
@@ -602,10 +673,9 @@ index 0000000..f85d0d1
 +    /// Shows `source`; the agent's summary is asked for the first time it is shown.
 +    pub(crate) fn show_summary_source(&mut self, source: SummarySource, cx: &mut Context<Self>) {
 +        let asks = source == SummarySource::Agent
-+            && self
-+                .session_summary_card
-+                .as_ref()
-+                .is_some_and(|card| matches!(card.agent, AgentSummary::NotAsked | AgentSummary::Failed(_)));
++            && self.session_summary_card.as_ref().is_some_and(|card| {
++                matches!(card.agent, AgentSummary::NotAsked | AgentSummary::Failed(_))
++            });
 +        let Some(card) = self.session_summary_card.as_mut() else {
 +            return;
 +        };
@@ -697,11 +767,14 @@ index 0000000..f85d0d1
 +                excerpt: text.into(),
 +                inherited_messages: None,
 +            };
-+            let opening =
-+                panel.update(cx, |panel, cx| panel.open_sub_thread(request, true, window, cx));
++            let opening = panel.update(cx, |panel, cx| {
++                panel.open_sub_thread(request, true, window, cx)
++            });
 +            cx.spawn(async move |_, _| {
 +                if let Err(error) = opening.await {
-+                    log::warn!("agent_ui event=session_summary_open_failed sub_thread=true: {error:#}");
++                    log::warn!(
++                        "agent_ui event=session_summary_open_failed sub_thread=true: {error:#}"
++                    );
 +                }
 +            })
 +            .detach();
@@ -726,12 +799,18 @@ index 0000000..f85d0d1
 +        let sources = ToggleButtonGroup::single_row(
 +            "session-summary-source",
 +            [
-+                ToggleButtonSimple::new(t!("agent-summary-local"), cx.listener(|this, _, _, cx| {
-+                    this.show_summary_source(SummarySource::Local, cx)
-+                })),
-+                ToggleButtonSimple::new(t!("agent-summary-agent"), cx.listener(|this, _, _, cx| {
-+                    this.show_summary_source(SummarySource::Agent, cx)
-+                })),
++                ToggleButtonSimple::new(
++                    t!("agent-summary-local"),
++                    cx.listener(|this, _, _, cx| {
++                        this.show_summary_source(SummarySource::Local, cx)
++                    }),
++                ),
++                ToggleButtonSimple::new(
++                    t!("agent-summary-agent"),
++                    cx.listener(|this, _, _, cx| {
++                        this.show_summary_source(SummarySource::Agent, cx)
++                    }),
++                ),
 +            ],
 +        )
 +        .selected_index(match card.source {
@@ -748,14 +827,22 @@ index 0000000..f85d0d1
 +            .child(
 +                h_flex()
 +                    .gap_1p5()
-+                    .child(Icon::new(IconName::ListTodo).size(IconSize::XSmall).color(Color::Muted))
++                    .child(
++                        Icon::new(IconName::ListTodo)
++                            .size(IconSize::XSmall)
++                            .color(Color::Muted),
++                    )
 +                    .child(Label::new(t!("agent-summary")).size(LabelSize::Small)),
 +            )
 +            .child(
 +                h_flex()
 +                    .gap_1()
 +                    .when(offers_agent, |this| {
-+                        this.child(div().debug_selector(|| "session-summary-sources".into()).child(sources))
++                        this.child(
++                            div()
++                                .debug_selector(|| "session-summary-sources".into())
++                                .child(sources),
++                        )
 +                    })
 +                    .child(
 +                        IconButton::new("session-summary-dismiss", IconName::Close)
@@ -819,38 +906,63 @@ index 0000000..f85d0d1
 +        let footer = h_flex()
 +            .gap_1()
 +            .justify_end()
-+            .child(div().debug_selector(|| "session-summary-copy".into()).child(
-+                action("session-summary-copy", t!("agent-summary-copy"), IconName::Copy).on_click({
-+                    let text = text.clone();
-+                    move |_, _, cx| {
-+                        if let Some(text) = &text {
-+                            cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
-+                        }
-+                    }
-+                }),
-+            ))
-+            .child(div().debug_selector(|| "session-summary-new-thread".into()).child(
-+                action("session-summary-new-thread", t!("agent-summary-new-thread"), IconName::Plus)
-+                    .on_click(cx.listener({
-+                        let text = text.clone();
-+                        move |this, _, window, cx| {
-+                            if let Some(text) = text.clone() {
-+                                this.open_summary_in_thread(text, false, window, cx);
++            .child(
++                div()
++                    .debug_selector(|| "session-summary-copy".into())
++                    .child(
++                        action(
++                            "session-summary-copy",
++                            t!("agent-summary-copy"),
++                            IconName::Copy,
++                        )
++                        .on_click({
++                            let text = text.clone();
++                            move |_, _, cx| {
++                                if let Some(text) = &text {
++                                    cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
++                                }
 +                            }
-+                        }
-+                    })),
-+            ))
-+            .child(div().debug_selector(|| "session-summary-sub-thread".into()).child(
-+                action("session-summary-sub-thread", t!("agent-summary-sub-thread"), IconName::Split)
-+                    .on_click(cx.listener({
-+                        let text = text.clone();
-+                        move |this, _, window, cx| {
-+                            if let Some(text) = text.clone() {
-+                                this.open_summary_in_thread(text, true, window, cx);
++                        }),
++                    ),
++            )
++            .child(
++                div()
++                    .debug_selector(|| "session-summary-new-thread".into())
++                    .child(
++                        action(
++                            "session-summary-new-thread",
++                            t!("agent-summary-new-thread"),
++                            IconName::Plus,
++                        )
++                        .on_click(cx.listener({
++                            let text = text.clone();
++                            move |this, _, window, cx| {
++                                if let Some(text) = text.clone() {
++                                    this.open_summary_in_thread(text, false, window, cx);
++                                }
 +                            }
-+                        }
-+                    })),
-+            ));
++                        })),
++                    ),
++            )
++            .child(
++                div()
++                    .debug_selector(|| "session-summary-sub-thread".into())
++                    .child(
++                        action(
++                            "session-summary-sub-thread",
++                            t!("agent-summary-sub-thread"),
++                            IconName::Split,
++                        )
++                        .on_click(cx.listener({
++                            let text = text.clone();
++                            move |this, _, window, cx| {
++                                if let Some(text) = text.clone() {
++                                    this.open_summary_in_thread(text, true, window, cx);
++                                }
++                            }
++                        })),
++                    ),
++            );
 +
 +        let colors = cx.theme().colors();
 +        let card = v_flex()
@@ -871,13 +983,12 @@ index 0000000..f85d0d1
 +        Some(content_column(card, cx).into_any_element())
 +    }
 +}
-+
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs b/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs
 new file mode 100644
-index 0000000..37d44fc
+index 0000000..0a4328f
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,97 @@
 +// Operator, 2026-11-25: "Summarize Session" opens a card with a precise, ordered account of the
 +// session, to copy or to open as a new thread or a sub-thread. Hostile halves first: an agent
 +// that cannot answer side questions must not offer the agent's summary; the card reads the
@@ -934,7 +1045,10 @@ index 0000000..37d44fc
 +#[gpui::test]
 +async fn session_summary_shows_the_thread_as_it_is(cx: &mut TestAppContext) {
 +    let (view, mut cx) = summarized(cx).await;
-+    assert!(cx.debug_bounds("session-summary-card").is_some(), "the card is drawn");
++    assert!(
++        cx.debug_bounds("session-summary-card").is_some(),
++        "the card is drawn"
++    );
 +    assert!(cx.debug_bounds("session-summary-text").is_some());
 +    let text = card_text(&view, &mut cx);
 +    assert!(text.contains("## Requests\n1. Fix the build\n"), "{text}");
@@ -945,9 +1059,7 @@ index 0000000..37d44fc
 +}
 +
 +#[gpui::test]
-+async fn session_summary_without_side_questions_offers_only_the_local_one(
-+    cx: &mut TestAppContext,
-+) {
++async fn session_summary_without_side_questions_offers_only_the_local_one(cx: &mut TestAppContext) {
 +    let (_view, mut cx) = summarized(cx).await;
 +    assert!(
 +        cx.debug_bounds("session-summary-sources").is_none(),
@@ -975,16 +1087,15 @@ index 0000000..37d44fc
 +    assert_eq!(copied, card_text(&view, &mut cx));
 +}
 diff --git a/crates/zeo_i18n/locales/en-US/agent-ui.ftl b/crates/zeo_i18n/locales/en-US/agent-ui.ftl
-index a62ad06..2ffe5ea 100644
+index a62ad06..44348a0 100644
 --- a/crates/zeo_i18n/locales/en-US/agent-ui.ftl
 +++ b/crates/zeo_i18n/locales/en-US/agent-ui.ftl
-@@ -91,3 +91,15 @@ agent-btw-dismiss = Dismiss
+@@ -91,3 +91,14 @@ agent-btw-dismiss = Dismiss
  agent-btw-asking = Asking on the side…
  agent-btw-footer = Not added to the conversation
  agent-btw-footer-model = Not added to the conversation · answered by { $model }
 +
 +## The session summary card (operator, 2026-11-25)
-+agent-summary-menu = Summarize Session
 +agent-summary = Session summary
 +agent-summary-untitled = Untitled thread
 +agent-summary-local = Local
@@ -995,16 +1106,15 @@ index a62ad06..2ffe5ea 100644
 +agent-summary-new-thread = New Thread
 +agent-summary-sub-thread = Sub-thread
 diff --git a/crates/zeo_i18n/locales/pt-BR/agent-ui.ftl b/crates/zeo_i18n/locales/pt-BR/agent-ui.ftl
-index d3d4181..c0a868e 100644
+index d3d4181..f400330 100644
 --- a/crates/zeo_i18n/locales/pt-BR/agent-ui.ftl
 +++ b/crates/zeo_i18n/locales/pt-BR/agent-ui.ftl
-@@ -90,3 +90,15 @@ agent-btw-dismiss = Dispensar
+@@ -90,3 +90,14 @@ agent-btw-dismiss = Dispensar
  agent-btw-asking = Perguntando à parte…
  agent-btw-footer = Não foi adicionada à conversa
  agent-btw-footer-model = Não foi adicionada à conversa · respondida por { $model }
 +
 +## The session summary card (operator, 2026-11-25)
-+agent-summary-menu = Resumir a sessão
 +agent-summary = Resumo da sessão
 +agent-summary-untitled = Thread sem título
 +agent-summary-local = Local

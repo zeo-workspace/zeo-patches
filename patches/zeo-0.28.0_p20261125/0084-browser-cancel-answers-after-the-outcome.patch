@@ -180,10 +180,10 @@ index 0000000..8444719
 +    assert_eq!(answer["error"], "send_failed");
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index 4c3e157..8c2ed7e 100644
+index c32067a..8002c0e 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
-@@ -3102,6 +3102,41 @@ impl ThreadView {
+@@ -3103,6 +3103,41 @@ impl ThreadView {
          cx.notify();
      }
  

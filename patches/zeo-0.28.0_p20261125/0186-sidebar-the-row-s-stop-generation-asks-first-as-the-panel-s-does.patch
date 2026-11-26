@@ -63,18 +63,18 @@ index f70b0a8..fcd7814 100644
          let new_work_dirs = self.project.read(cx).default_path_list(cx);
          let new_worktree_paths = self.project.read(cx).worktree_paths(cx);
 diff --git a/crates/sidebar/src/sidebar.rs b/crates/sidebar/src/sidebar.rs
-index 34c0352..ca8a3a7 100644
+index 34c0352..61d5a3c 100644
 --- a/crates/sidebar/src/sidebar.rs
 +++ b/crates/sidebar/src/sidebar.rs
-@@ -103,6 +103,8 @@ mod sidebar_pinned_tests;
+@@ -101,6 +101,8 @@ mod sidebar_pinned_persist_tests;
  #[cfg(test)]
- mod sidebar_sub_thread_tests;
+ mod sidebar_pinned_tests;
  #[cfg(test)]
 +mod sidebar_stop_confirm_tests;
 +#[cfg(test)]
+ mod sidebar_sub_thread_tests;
+ #[cfg(test)]
  mod sidebar_task_feed_background_tests;
- mod sub_thread_marker;
- 
 @@ -5292,7 +5294,14 @@ impl Sidebar {
          self.update_entries(cx);
      }
@@ -116,10 +116,10 @@ index 34c0352..ca8a3a7 100644
                      )
 diff --git a/crates/sidebar/src/sidebar_stop_confirm_tests.rs b/crates/sidebar/src/sidebar_stop_confirm_tests.rs
 new file mode 100644
-index 0000000..069d59a
+index 0000000..ee659dc
 --- /dev/null
 +++ b/crates/sidebar/src/sidebar_stop_confirm_tests.rs
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,84 @@
 +// Operator, 2026-11-25: the sidebar row's Stop Generation stopped the turn at once, while the
 +// agent panel's asked first (0166). Both now go through `ThreadView::confirm_cancel_generation`.
 +//
@@ -161,7 +161,11 @@ index 0000000..069d59a
 +#[gpui::test]
 +async fn test_sidebar_stop_asks_and_keep_going_keeps_the_turn(cx: &mut TestAppContext) {
 +    let (sidebar, thread, thread_id, cx) = generating_thread(cx).await;
-+    assert_eq!(status(&thread, cx), ThreadStatus::Generating, "precondition");
++    assert_eq!(
++        status(&thread, cx),
++        ThreadStatus::Generating,
++        "precondition"
++    );
 +
 +    sidebar.update_in(cx, |sidebar, window, cx| {
 +        sidebar.stop_thread(&thread_id, window, cx)
@@ -176,7 +180,11 @@ index 0000000..069d59a
 +
 +    cx.simulate_prompt_answer("Keep Going");
 +    cx.run_until_parked();
-+    assert_eq!(status(&thread, cx), ThreadStatus::Generating, "Keep Going keeps the turn");
++    assert_eq!(
++        status(&thread, cx),
++        ThreadStatus::Generating,
++        "Keep Going keeps the turn"
++    );
 +}
 +
 +#[gpui::test]
@@ -190,5 +198,9 @@ index 0000000..069d59a
 +    assert!(cx.has_pending_prompt());
 +    cx.simulate_prompt_answer("Stop");
 +    cx.run_until_parked();
-+    assert_eq!(status(&thread, cx), ThreadStatus::Idle, "Stop stops the turn");
++    assert_eq!(
++        status(&thread, cx),
++        ThreadStatus::Idle,
++        "Stop stops the turn"
++    );
 +}

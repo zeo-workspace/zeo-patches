@@ -440,7 +440,7 @@ index 146ecc8..8050593 100644
 +#[path = "agent_jail_status_pause_tests.rs"]
 +mod pause;
 diff --git a/crates/agent_ui/src/conversation_view/thread_view.rs b/crates/agent_ui/src/conversation_view/thread_view.rs
-index b6de062..86201de 100644
+index c4891ba..3484900 100644
 --- a/crates/agent_ui/src/conversation_view/thread_view.rs
 +++ b/crates/agent_ui/src/conversation_view/thread_view.rs
 @@ -7190,19 +7190,50 @@ impl ThreadView {

@@ -177,7 +177,7 @@ index 2660cdd..758e642 100644
    // that receives element selections from a dev-server page and hands them to
    // the agent panel. Turning it off stops listening and removes the socket.
 diff --git a/crates/agent_ui/src/agent_panel.rs b/crates/agent_ui/src/agent_panel.rs
-index 1f019d0..2fded6a 100644
+index 85f345c..95d1ed5 100644
 --- a/crates/agent_ui/src/agent_panel.rs
 +++ b/crates/agent_ui/src/agent_panel.rs
 @@ -4059,6 +4059,58 @@ impl AgentPanel {
@@ -11724,7 +11724,7 @@ index 59efba5..5ebaa11 100644
              apply_live_row_state(
                  &mut row,
 diff --git a/crates/sidebar/src/sidebar.rs b/crates/sidebar/src/sidebar.rs
-index ca8a3a7..332a1fc 100644
+index 61d5a3c..2d5e83c 100644
 --- a/crates/sidebar/src/sidebar.rs
 +++ b/crates/sidebar/src/sidebar.rs
 @@ -8,6 +8,7 @@ use action_log::DiffStats;
