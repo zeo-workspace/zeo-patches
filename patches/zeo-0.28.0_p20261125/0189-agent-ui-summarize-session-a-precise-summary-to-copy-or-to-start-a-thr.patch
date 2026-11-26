@@ -35,6 +35,13 @@ the same agent whose composer holds the summary, unsent
 (new_thread_with_prefilled_prompt); Sub-thread, story 039's clean sub-thread,
 linked under this thread in the sidebar, the summary quoted in its composer.
 
+New Thread and Sub-thread open after the click, deferred (window.defer): the
+click is still updating this ThreadView, and opening a thread makes the
+panel keep the one leaving the screen -- this one, when it is running --
+which reads it. Seen on Xvfb as a double-lease panic before the deferral.
+A sub-thread's link shows in the sidebar after its first message, as story
+039's clean sub-thread always has.
+
 Logs: session_summary_opened (items, chars), session_summary_agent
 (outcome, chars), session_summary_open (sub_thread, chars) -- lengths only,
 never the text.
@@ -42,7 +49,10 @@ never the text.
 Tests: session_digest_tests.rs (the digest's rules) and
 thread_view/tests/session_summary_tests.rs (the card reads the thread as it
 is; an agent without side questions offers only the local summary; Copy
-takes the text on screen). The agent source has no stub answering side
+takes the text on screen; New Thread and Sub-thread close the card). The
+panic above was not reproducible in the test harness -- its stub agent never
+reaches the panel's keep-the-running-thread path -- so the Xvfb proof is
+its evidence. The agent source has no stub answering side
 questions, so it is covered by the live test.
 
 In the claude-agent-acp-plus group, at its end.
@@ -498,10 +508,10 @@ index 0000000..e80a306
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs b/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs
 new file mode 100644
-index 0000000..e3d9558
+index 0000000..12c70e3
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/session_summary.rs
-@@ -0,0 +1,481 @@
+@@ -0,0 +1,489 @@
 +//! The session summary card (operator, 2026-11-25): a precise, ordered account of the session,
 +//! to copy or to start a new thread or a sub-thread from.
 +//!
@@ -757,32 +767,40 @@ index 0000000..e3d9558
 +            "agent_ui event=session_summary_open session_id={session_id} sub_thread={as_sub_thread} chars={}",
 +            text.chars().count()
 +        );
-+        if as_sub_thread {
-+            let request = SubThreadRequest {
-+                parent_thread_id: self.root_thread_id,
-+                parent_session_id: session_id,
-+                agent,
-+                work_dirs: self.thread.read(cx).work_dirs().cloned(),
-+                kind: ForkKind::Clean,
-+                excerpt: text.into(),
-+                inherited_messages: None,
-+            };
-+            let opening = panel.update(cx, |panel, cx| {
-+                panel.open_sub_thread(request, true, window, cx)
-+            });
-+            cx.spawn(async move |_, _| {
-+                if let Err(error) = opening.await {
-+                    log::warn!(
-+                        "agent_ui event=session_summary_open_failed sub_thread=true: {error:#}"
-+                    );
-+                }
-+            })
-+            .detach();
-+        } else {
-+            panel.update(cx, |panel, cx| {
-+                panel.new_thread_with_prefilled_prompt(agent, session_id, text, true, window, cx)
-+            });
-+        }
++        let work_dirs = self.thread.read(cx).work_dirs().cloned();
++        let parent_thread_id = self.root_thread_id;
++        // Deferred: the click is still updating this view, and opening a thread makes the panel
++        // keep the one leaving the screen -- this one, if it is running -- which reads it. Seen
++        // on Xvfb as a double-lease panic (2026-11-25).
++        window.defer(cx, move |window, cx| {
++            if as_sub_thread {
++                let request = SubThreadRequest {
++                    parent_thread_id,
++                    parent_session_id: session_id,
++                    agent,
++                    work_dirs,
++                    kind: ForkKind::Clean,
++                    excerpt: text.into(),
++                    inherited_messages: None,
++                };
++                let opening = panel.update(cx, |panel, cx| {
++                    panel.open_sub_thread(request, true, window, cx)
++                });
++                cx.spawn(async move |_| {
++                    if let Err(error) = opening.await {
++                        log::warn!(
++                            "agent_ui event=session_summary_open_failed sub_thread=true: {error:#}"
++                        );
++                    }
++                })
++                .detach();
++            } else {
++                panel.update(cx, |panel, cx| {
++                    panel
++                        .new_thread_with_prefilled_prompt(agent, session_id, text, true, window, cx)
++                });
++            }
++        });
 +        self.session_summary_card = None;
 +        cx.notify();
 +    }
@@ -985,10 +1003,10 @@ index 0000000..e3d9558
 +}
 diff --git a/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs b/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs
 new file mode 100644
-index 0000000..0a4328f
+index 0000000..ffc11b7
 --- /dev/null
 +++ b/crates/agent_ui/src/conversation_view/thread_view/tests/session_summary_tests.rs
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,144 @@
 +// Operator, 2026-11-25: "Summarize Session" opens a card with a precise, ordered account of the
 +// session, to copy or to open as a new thread or a sub-thread. Hostile halves first: an agent
 +// that cannot answer side questions must not offer the agent's summary; the card reads the
@@ -1028,6 +1046,25 @@ index 0000000..0a4328f
 +        )),
 +        &mut cx,
 +    );
++    view.update(&mut cx, |view, cx| view.show_session_summary(cx));
++    draw(&mut cx);
++    (view, cx)
++}
++
++/// As `summarized`, on a thread that has sent a message and is still running -- a thread the
++/// panel keeps when another one takes the screen, which reads this view.
++async fn summarized_while_running(
++    cx: &mut TestAppContext,
++) -> (gpui::Entity<ThreadView>, gpui::VisualTestContext) {
++    let (view, _thread, mut cx) = setup(cx).await;
++    let panel = view.read_with(&cx, |view, cx| {
++        view.workspace
++            .upgrade()
++            .and_then(|workspace| workspace.read(cx).panel::<crate::AgentPanel>(cx))
++            .expect("the agent panel")
++    });
++    crate::test_support::send_message(&panel, &mut cx);
++    cx.run_until_parked();
 +    view.update(&mut cx, |view, cx| view.show_session_summary(cx));
 +    draw(&mut cx);
 +    (view, cx)
@@ -1085,6 +1122,34 @@ index 0000000..0a4328f
 +        .and_then(|item| item.text())
 +        .expect("something was copied");
 +    assert_eq!(copied, card_text(&view, &mut cx));
++}
++
++/// Seen on Xvfb, 2026-11-25: New Thread and Sub-thread panicked (the panel read the summary's
++/// own ThreadView while the click was still updating it). Both now open a thread and close the
++/// card.
++#[gpui::test]
++async fn session_summary_new_thread_opens_without_a_panic(cx: &mut TestAppContext) {
++    let (view, mut cx) = summarized_while_running(cx).await;
++    let new_thread = cx
++        .debug_bounds("session-summary-new-thread")
++        .expect("New Thread");
++    cx.simulate_click(new_thread.center(), gpui::Modifiers::default());
++    cx.run_until_parked();
++    assert!(
++        view.read_with(&cx, |view, _| view.session_summary_card.is_none()),
++        "the card closes once the thread is opened"
++    );
++}
++
++#[gpui::test]
++async fn session_summary_sub_thread_opens_without_a_panic(cx: &mut TestAppContext) {
++    let (view, mut cx) = summarized_while_running(cx).await;
++    let sub_thread = cx
++        .debug_bounds("session-summary-sub-thread")
++        .expect("Sub-thread");
++    cx.simulate_click(sub_thread.center(), gpui::Modifiers::default());
++    cx.run_until_parked();
++    assert!(view.read_with(&cx, |view, _| view.session_summary_card.is_none()));
 +}
 diff --git a/crates/zeo_i18n/locales/en-US/agent-ui.ftl b/crates/zeo_i18n/locales/en-US/agent-ui.ftl
 index a62ad06..44348a0 100644
