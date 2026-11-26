@@ -31,6 +31,23 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+### Series
+
+- New, in `claude-agent-acp-plus` after `0193`: `0204`. A card closed from Zeo's own controls
+  fades out before it goes -- the `/btw` card's Close, a tasks-card row's dismiss and "Clear
+  finished", and the whole tasks card when its last rows leave; at once under `reduce_motion`.
+  The floating controls' "N new" label fades in. The question card is not faded out (operator,
+  2026-11-26): its contents are gone when it closes.
+- New, after `0204`: `0205`. The floating controls' four jumps scroll with a 200 ms ease-out and
+  land on the same `scroll_to` as before; a jump longer than a viewport starts one viewport
+  short. `gpui`'s `ListState` gains `pixel_offset_of`, `scroll_top_pixel_offset` and
+  `scroll_to_pixel_offset`. `0205` was generated at its own place in the series: the voice patches
+  after it change the lines around `ThreadView`'s constructor and `render`.
+
+### Tooling
+
+- `test.sh`: `gpui` joins `CRATES`, since `0205` is the first patch to touch it.
+
 ## [0.29.0_p20261125] — 2026-11-26
 
 Zeo `0.29.0` on the same Zed `6ba65ce3`: §6.52's first step (`0193`) and the whole interface in

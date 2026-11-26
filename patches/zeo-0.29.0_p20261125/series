@@ -808,6 +808,12 @@
 # 0193: the agent panel's cards fade in, skipped under reduce_motion, and the latency report
 # measures frame durations (§6.52 first step; operator, 2026-11-17). On 0181/0189.
 0193-agent-ui-the-agent-panel-s-cards-fade-in-the-latency-report-measures-fr.patch
+# 0204: cards fade out when closed (/btw, tasks-card rows and the whole card); the floating
+# "N new" label fades in (§6.52; operator, 2026-11-26). On 0193.
+0204-agent-ui-cards-fade-out-when-closed-the-floating-n-new-label-fades-in.patch
+# 0205: the floating controls' jumps scroll with a 200 ms ease-out; gpui ListState gains pixel
+# offsets (§6.52; operator, 2026-11-26). On 0204.
+0205-agent-ui-gpui-the-floating-thread-controls-scroll-with-a-short-ease-out.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
