@@ -167,6 +167,24 @@
 # with Lara and revised. UNGROUPED and new files only, so any USE set applies it; a build
 # without a group ships that group's es messages unused (operator, 2026-11-26).
 0196-zeo-i18n-spanish-es-zed-s-strings-and-zeo-s-own-screens-pilot.patch
+# 0197: French -- locales/fr/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0197-zeo-i18n-french-fr-zed-s-strings-and-zeo-s-own-screens.patch
+# 0198: Italian -- locales/it/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0198-zeo-i18n-italian-it-zed-s-strings-and-zeo-s-own-screens.patch
+# 0199: German -- locales/de/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0199-zeo-i18n-german-de-zed-s-strings-and-zeo-s-own-screens.patch
+# 0200: Russian -- locales/ru/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0200-zeo-i18n-russian-ru-zed-s-strings-and-zeo-s-own-screens.patch
+# 0201: Japanese -- locales/ja/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0201-zeo-i18n-japanese-ja-zed-s-strings-and-zeo-s-own-screens.patch
+# 0202: Simplified Chinese -- locales/zh-CN/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
+0202-zeo-i18n-simplified-chinese-zh-cn-zed-s-strings-and-zeo-s-own-screens.patch
 
 # @feature: claude-agent-acp-plus
 0001-force-enable-claude-agent-acp-plus.patch
