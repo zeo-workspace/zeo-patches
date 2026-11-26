@@ -28,6 +28,13 @@ ten seconds. The restart itself goes straight to restart_for_jail: the
 confirmation already said a running turn stops, so restart_agent_for_jail's
 own "Restart the agent?" would be a second question.
 
+One click reaches the switch's handler up to three times -- SwitchField's row,
+its Switch and, with a tab index, the Switch's inner element all carry it
+(upstream ui) -- so the modal ignores the switch while a confirmation it
+opened is pending. Without that, three prompts opened and each replaced the
+one before (seen on Xvfb: three quick_modal_toggle lines, two cancelled);
+0174's turn-off had the same three prompts.
+
 New catalog entries (en-US, pt-BR): agent-jail-confirm-turn-on-project,
 agent-jail-confirm-turn-on-detail, agent-jail-button-turn-on-restart; the
 modal's hint now says what turning on does.
@@ -71,10 +78,10 @@ index ba0915b..c12d22a 100644
  pub fn confirm_forget(path: &str, window: &mut Window, cx: &mut App) -> Task<bool> {
      let message = t!("agent-jail-confirm-forget", path = path);
 diff --git a/crates/agent_ui/src/agent_jail_quick_modal.rs b/crates/agent_ui/src/agent_jail_quick_modal.rs
-index 03ef079..efac9a0 100644
+index 03ef079..7cf17dd 100644
 --- a/crates/agent_ui/src/agent_jail_quick_modal.rs
 +++ b/crates/agent_ui/src/agent_jail_quick_modal.rs
-@@ -3,31 +3,61 @@
+@@ -3,31 +3,66 @@
  //! capabilities -- when all the operator wanted was to turn the jail on. The modal holds only
  //! this project's switch and "Advanced…", which opens the full page. A jail already on keeps the
  //! old click (the page), and a pending change keeps the restart.
@@ -110,6 +117,10 @@ index 03ef079..efac9a0 100644
      agent_id: AgentId,
      root: PathBuf,
 +    restart: RestartAgent,
++    /// A turn-on confirmation is open. One click reaches the switch's handler up to three times
++    /// (SwitchField's row, its Switch and, with a tab index, the Switch's inner element all
++    /// carry it), and each would open its own prompt, replacing the one before.
++    asking: bool,
      focus_handle: FocusHandle,
      _settings: Subscription,
  }
@@ -135,10 +146,11 @@ index 03ef079..efac9a0 100644
              agent_id,
              root,
 +            restart,
++            asking: false,
              focus_handle: cx.focus_handle(),
              // The switch shows the setting of now: a change saved from here, or from the page in
              // another window, redraws it.
-@@ -37,11 +67,87 @@ impl AgentJailQuickModal {
+@@ -37,11 +72,98 @@ impl AgentJailQuickModal {
  
      /// Whether the next start of this thread's agent would be jailed, as the lock reads it.
      pub fn jail_on(&self, cx: &App) -> bool {
@@ -153,9 +165,20 @@ index 03ef079..efac9a0 100644
 +    /// wait runs on the window, not on this popover: the confirmation takes focus, and the
 +    /// popover may be gone by the time the setting comes back.
 +    fn set_jail(&mut self, on: bool, window: &mut Window, cx: &mut Context<Self>) {
++        if self.asking {
++            return;
++        }
 +        log::info!("agent_sandbox event=quick_modal_toggle on={on}");
 +        if !on {
-+            agent_sandbox::confirm::set_project_enabled(&self.root, false, window, cx).detach();
++            let turning_off =
++                agent_sandbox::confirm::set_project_enabled(&self.root, false, window, cx);
++            self.asking = true;
++            cx.spawn(async move |this, cx| {
++                turning_off.await;
++                this.update(cx, |this, _| this.asking = false).ok();
+             })
+-            .unwrap_or(false)
++            .detach();
 +            return;
 +        }
 +        let name = self
@@ -164,6 +187,7 @@ index 03ef079..efac9a0 100644
 +            .map(|name| name.to_string_lossy().into_owned())
 +            .unwrap_or_else(|| self.root.to_string_lossy().into_owned());
 +        let consent = agent_sandbox::confirm::confirm_turn_on_and_restart(&name, window, cx);
++        self.asking = true;
 +        let (agent_id, root, restart) = (
 +            self.agent_id.clone(),
 +            self.root.clone(),
@@ -223,14 +247,13 @@ index 03ef079..efac9a0 100644
 +                        }
 +                    }
 +                }
-             })
--            .unwrap_or(false)
++            })
 +            .detach();
 +        cx.emit(DismissEvent);
      }
  
      fn open_advanced(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-@@ -68,25 +174,16 @@ impl Focusable for AgentJailQuickModal {
+@@ -68,25 +190,16 @@ impl Focusable for AgentJailQuickModal {
  
  impl Render for AgentJailQuickModal {
      fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
