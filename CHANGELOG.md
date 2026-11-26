@@ -59,6 +59,10 @@ cases). Record: `/var/tmp/zp-bump1125-PROGRESS.md`.
 - `0067` and `0175` name `sha2 0.10.9` in `Cargo.lock`: `6ba65ce3` brings `sha2 0.11.1` too,
   so a bare `"sha2"` no longer resolves. `test.sh` and the ebuild build `--offline` and cargo
   rewrote the line silently; the portable build's `--locked` refused it.
+- `0177` gains a `build.rs` that lists every `locales/*/*.ftl` into `$OUT_DIR`; `catalog.rs`
+  includes it, and `0178`-`0185` no longer edit `catalog.rs`. Their appends to one hand-kept
+  list made every USE combination but the full one fail to apply: the Windows release, which
+  has no `ai-jail`, stopped at `0184`. `scripts/i18n-check.py` reads the generated mode.
 - The Xvfb proofs (hub `docs/assets/zeo-batch-0280-2026-11-25/`) found two bugs fixed before
   the gates: a double-lease panic in `0189`'s New Thread/Sub-thread, which the unit harness
   cannot reach, and `0188`'s switch firing three times per click.
