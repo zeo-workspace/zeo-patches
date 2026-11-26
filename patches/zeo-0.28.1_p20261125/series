@@ -769,6 +769,9 @@
 # summary through /btw, to copy or to open as a new thread or a sub-thread (operator,
 # 2026-11-25). On 0070/0115/0177.
 0189-agent-ui-summarize-session-a-precise-summary-to-copy-or-to-start-a-thr.patch
+# 0193: the agent panel's cards fade in, skipped under reduce_motion, and the latency report
+# measures frame durations (§6.52 first step; operator, 2026-11-17). On 0181/0189.
+0193-agent-ui-the-agent-panel-s-cards-fade-in-the-latency-report-measures-fr.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
