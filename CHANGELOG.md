@@ -54,6 +54,8 @@ choice (2026-11-26), from a copy of this tree inside the warm mirror `/var/tmp/z
   catalog), `0196`-`0202` (Spanish, French, Italian, German, Russian, Japanese, Simplified
   Chinese) and `0203` (the picker marks a translation no native speaker has reviewed; the mark is
   a line in that language's `zeo.ftl`). Numbered after `0190` because 0.28.1 took it.
+- `0057`, `0152` and `0178` regenerated: they carry `0194`'s lines as context (`settings_ui`
+  depends on `zeo_i18n` from `0194` on, no longer from `0178`). No behaviour changes.
 
 ### Tooling
 
