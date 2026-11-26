@@ -310,16 +310,15 @@ No new dependency is introduced: `quilt` is deliberately absent.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+Two licenses, by what the file is:
 
-**What MIT covers:** everything original to this repository — `scripts/`, the `series`
-files and this README.
-
-**What it does not:** the `patches/**/*.patch` files are diffs against
-[Zed](https://github.com/zed-industries/zed), so their added and removed lines are
-excerpts of Zed's own source and remain under Zed's license (GPL-3.0). The MIT grant
-above cannot and does not relicense that material; it applies to the tooling that
-manages the patches, not to the upstream code they carry.
+- **The patches — `patches/**/*.patch` — are GPL-3.0-or-later**, in
+  [`LICENSE-GPL`](LICENSE-GPL). They change [Zed](https://github.com/zed-industries/zed)
+  source that Zed licenses as GPL-3.0-or-later, so both the lines they carry from Zed and the
+  lines they add are under it: a change to a GPL file is a derived work of that file. A
+  patch that only touches one of Zed's Apache-2.0 crates follows that crate's license.
+- **Everything else — `scripts/`, the `series` files, this README — is Apache-2.0**, in
+  [`LICENSE`](LICENSE). Until 2026-11-26 this part was under the MIT License.
 
 ## Releasing zeo-bin
 
