@@ -127,6 +127,12 @@ class I18nCheckTest(TreeCase):
     def test_an_ftl_file_catalog_rs_does_not_embed_is_unlisted(self):
         self.assertEqual(self.kinds(self.tree(extra_ftl="# empty\n")), ["unlisted"])
 
+    def test_a_generated_catalog_ships_every_file_on_disk(self):
+        tree = self.tree(extra_ftl="# empty\n")
+        catalog = tree / "crates/zeo_i18n/src/catalog.rs"
+        catalog.write_text('include!(concat!(env!("OUT_DIR"), "/shipped.rs"));\n')
+        self.assertNotIn("unlisted", self.kinds(tree))
+
     def test_an_ftl_file_catalog_rs_embeds_but_is_missing_is_absent(self):
         catalog = CATALOG_RS.replace("pt-BR/zeo.ftl", "pt-BR/gone.ftl")
         kinds = self.kinds(self.tree(catalog=catalog))

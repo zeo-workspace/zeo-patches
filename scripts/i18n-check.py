@@ -14,6 +14,7 @@
   stale        an id a translation defines and en-US no longer does;
   foreign var  a translation reading a variable en-US's pattern never gets;
   unlisted     an .ftl file on disk that catalog.rs does not embed, so it would never ship;
+               (only with a hand-kept list: build.rs's generated one ships every file);
   absent       an .ftl file catalog.rs embeds that is not on disk -- the build would fail;
   literal      a sentence left as a string literal in a file that already uses t!.
 
@@ -46,6 +47,9 @@ NOT_TEXT_LINE = re.compile(
     r"unreachable!|debug_selector|KeyBinding|actions!"
 )
 SHIPPED_FILE = re.compile(r'include_str!\("\.\./locales/([^"]+\.ftl)"\)')
+# Since the bump to Zed 6ba65ce3 (2026-11-25) build.rs lists every locales/*/*.ftl into
+# $OUT_DIR and catalog.rs includes it, so a file on disk always ships and none can be absent.
+GENERATED_SHIPPED = re.compile(r'include!\(concat!\(env!\("OUT_DIR"\), "/shipped\.rs"\)\)')
 
 
 def call_args(text: str, open_paren: int) -> str:
@@ -160,7 +164,13 @@ def check(tree: pathlib.Path) -> list[str]:
     catalog_rs = tree / I18N_CRATE / "src" / "catalog.rs"
     problems: list[str] = []
 
-    shipped = set(SHIPPED_FILE.findall(catalog_rs.read_text(encoding="utf-8")))
+    catalog_text = catalog_rs.read_text(encoding="utf-8")
+    if GENERATED_SHIPPED.search(catalog_text):
+        shipped = {
+            ftl.relative_to(locales_dir).as_posix() for ftl in locales_dir.glob("*/*.ftl")
+        }
+    else:
+        shipped = set(SHIPPED_FILE.findall(catalog_text))
     for rel in sorted(shipped):
         if not (locales_dir / rel).is_file():
             problems.append(
