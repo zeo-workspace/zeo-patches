@@ -31,6 +31,41 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.28.0_p20261125] — 2026-11-25
+
+Zeo `0.28.0`: the series carried onto Zed `6ba65ce3` (2026-11-25, 54 commits past `c31063a0`)
+with the translation patches `0177`-`0185` and the operator's asks of 2026-11-25, `0186`-`0189`.
+The series is 183. Gates run locally on 32 cores, at the operator's choice: `test.sh --doc`
+8942/8942 + 45 doctests, `i18n-check` 0, clippy `--all-targets` (only `claude_code_ide`'s known
+lints), `verify.sh` 183/183, `check-sync.sh`, `ebuild prepare` offline (177 applied),
+`pkgcheck --cache=-git`, and `osv-scanner` against the old lockfile (none new, two gone).
+`selftest.sh` 114/119; the same five fail on `b3b4b36` (`status.sh`, `check-protocol.sh`
+cases). Record: `/var/tmp/zp-bump1125-PROGRESS.md`.
+
+### Series
+
+- Rebase by cherry-pick (`refresh.sh` conflicted at `0020`). Conflicts in `0010`, `0020`,
+  `0027`, `0049`, `0081`, `0127`, `0137`, `0177`; behaviour changes, each noted in its header:
+  `0010` keeps its Shift gesture over upstream #66869 (the operator's decision), and applies it
+  to the native profile picker; `0127` drops the offline AGS branch (upstream #67404 removed
+  AMD GPU Services). `CRATES` 1455 -> 1472.
+- `0025`: five new upstream literals rebranded (Bedrock, Windows PSEC errors); the PSEC peer
+  "Zed" and `0172`'s two badge strings accepted in `rebrand/zed-literals.txt`.
+- `0184` (devtools-panel, after `0063`) and `0185` (voice, after `0085`): their first
+  compile, test and clippy were this rebase's.
+- New, in `claude-agent-acp-plus` at its end: `0186` (the sidebar row's Stop asks first) and
+  `0189` (Summarize Session). New, in `ai-jail` at its end: `0187` (a paused jail shows Resume
+  only) and `0188` (the lock's modal under the lock; turning on asks and restarts).
+- The Xvfb proofs (hub `docs/assets/zeo-batch-0280-2026-11-25/`) found two bugs fixed before
+  the gates: a double-lease panic in `0189`'s New Thread/Sub-thread, which the unit harness
+  cannot reach, and `0188`'s switch firing three times per click.
+
+### Tooling
+
+- `release/windows/`: AMD GPU Services is no longer fetched, checked or shipped
+  (`build-inputs.lock`, `build.ps1`, `release-windows.sh`'s artefact check).
+- `rebrand/`: baselines updated for `6ba65ce3`.
+
 ## [0.27.0_p20261123] — 2026-11-24
 
 Zeo `0.27.0_p20261123`: the operator's UI batch of 2026-11-23 (items 5, 6, 9, 10, 12, 15) on
