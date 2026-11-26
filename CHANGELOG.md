@@ -31,6 +31,37 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.29.0_p20261125] — 2026-11-26
+
+Zeo `0.29.0` on the same Zed `6ba65ce3`: §6.52's first step (`0193`) and the whole interface in
+nine languages (`0194`-`0203`). The series is 195. Gates ran on bentoo-lab at the operator's
+choice (2026-11-26), from a copy of this tree inside the warm mirror `/var/tmp/zp-0270`:
+
+- `test.sh` 8970/8970 (27 skipped), `i18n-check` 0 (lab job `20261126-160753-87cc88`, under the
+  series' previous name, same patches);
+- clippy on zeo_i18n, settings, settings_content, settings_ui, ui, editor, command_palette and
+  agent_ui: no warning;
+- `check-sync.sh` under the new name: see the job recorded in the release commit;
+- Xvfb proofs with a lab-built binary: the fades (hub `docs/assets/zeo-6.52-card-fades-2026-11-26/`)
+  and the machine-translation mark (hub `docs/assets/zeo-0203-machine-translation-mark-2026-11-26/`).
+
+### Series
+
+- New, in `claude-agent-acp-plus` after `0189`: `0193`. The agent panel's cards fade in over
+  150 ms, at once under `reduce_motion`; `dev: dump input latency histogram` reports frame
+  durations.
+- New, ungrouped after `0177`: `0194` (the Language page), `0195` (Zed's own strings through the
+  catalog), `0196`-`0202` (Spanish, French, Italian, German, Russian, Japanese, Simplified
+  Chinese) and `0203` (the picker marks a translation no native speaker has reviewed; the mark is
+  a line in that language's `zeo.ftl`). Numbered after `0190` because 0.28.1 took it.
+
+### Tooling
+
+- New: `i18n-extract.py` (writes `zed-core.ftl` from the whole series, with its unit suite),
+  `check-strings.sh` (new and vanished strings across a bump), and a `bump.sh` step that runs it.
+- `i18n-check.py` reads `zed-core.ftl` ids by hash and checks each translation keeps its
+  template's `%1`, `%2`...; `TRANSLATION_ONLY` exempts `0203`'s mark.
+
 ## [0.28.1_p20261125] — 2026-11-26
 
 Zeo `0.28.1`, a security release on the same Zed `6ba65ce3`. It fixes the three findings of the
