@@ -1,4 +1,7 @@
-# zed-patches
+# zeo-patches
+
+> Checked out locally as `zed-patches/`: the repository was renamed from `zed-patches` on
+> 2026-11-17 and the directory kept its name.
 
 Source of truth for the downstream patches the `bentoo` overlay applies to
 `app-editors/zeo`, plus the tooling that answers one question mechanically:
@@ -10,7 +13,7 @@ only way to validate a version bump was to start a compile and watch it fail.
 
 **The series moved from `app-editors/zed` to `app-editors/zeo` on 2026-10-01.** Since
 then `zed` builds upstream's tagged releases with no patches, and the snapshot plus
-this series ships as Zeo — rebranded, versioned on its own (`0.1.0_p<date>`), and
+this series ships as Zeo — rebranded, versioned on its own (`<X.Y.Z>_p<date>`, e.g. `0.29.0_p20261125`), and
 also prebuilt as `zeo-bin`. Directories under `patches/` named `zed-*` are the history
 from before the move; new ones are named after the Zeo `PF`.
 
