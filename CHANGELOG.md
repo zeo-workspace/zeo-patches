@@ -31,7 +31,29 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
-## [0.28.0_p20261125] — 2026-11-25
+## [0.28.1_p20261125] — 2026-11-26
+
+Zeo `0.28.1`, a security release on the same Zed `6ba65ce3`. It fixes the three findings of the
+security audit of 2026-11-21 that reproduced (hub `docs/assets/security-fixes-2026-11-26/`). The
+series is 184. Gates were run locally on 8 cores:
+
+- `test.sh --doc` 8957/8957 and every doctest phase;
+- clippy `--all-targets`, with no warning in the crates the batch touches;
+- `verify.sh` 184/184 and `check-sync.sh` in sync;
+- `ebuild prepare` offline: 182 applied, the two left out are the `test` group;
+- `pkgcheck --cache=-git`: only the x32 dev profile's `NonsolvableDepsInDev` on
+  `dev-util/claude-code`, which this batch does not touch.
+
+### Series
+
+- `0062` amended. The worktree screen asks git whether `config.worktree` counts
+  (`--type=bool`). `extensions.worktreeConfig = 2`, `01`, `1k` or `-1` let a filter driver
+  through.
+- `0033` amended. A public ACP registry entry can no longer take a default agent's id. `0046`
+  was regenerated for line offsets only.
+- New, at the end of `ai-jail`: `0190`. A repository a jailed agent can write runs untrusted
+  and with its own filter and diff drivers switched off. The jailed root's `.git` loses its
+  drivers too. `agent_sandbox` gains `git` (and `worktree` for its tests) in `Cargo.lock`.
 
 Zeo `0.28.0`: the series carried onto Zed `6ba65ce3` (2026-11-25, 54 commits past `c31063a0`)
 with the translation patches `0177`-`0185` and the operator's asks of 2026-11-25, `0186`-`0189`.
