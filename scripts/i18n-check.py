@@ -53,6 +53,9 @@ SHIPPED_FILE = re.compile(r'include_str!\("\.\./locales/([^"]+\.ftl)"\)')
 # Messages zeo_i18n reads by id itself, never through t!: each language's name for itself,
 # shown in the Language page's picker (catalog.rs LANGUAGE_NAME_ID, patch 0194).
 READ_BY_THE_CATALOG = frozenset({"zeo-language-name"})
+# A translation's mark that no native speaker has reviewed it (catalog.rs MACHINE_TRANSLATED_ID,
+# patch 0203): only a translation carries it, so English lacking it is not staleness.
+TRANSLATION_ONLY = frozenset({"zeo-language-machine-translated"})
 # Zed's own strings (patch 0195): ids derived from the English, looked up by core_text.rs when
 # ui's constructors pass the text in, never through t!. Written by scripts/i18n-extract.py.
 CORE_FILE = "zed-core.ftl"
@@ -236,6 +239,8 @@ def check(tree: pathlib.Path) -> list[str]:
         if language == FALLBACK:
             continue
         for key, (names, _, where) in sorted(entries.items()):
+            if key in TRANSLATION_ONLY:
+                continue
             if key not in english:
                 problems.append(
                     f"stale        {where}: {key!r} is no longer in {FALLBACK}"

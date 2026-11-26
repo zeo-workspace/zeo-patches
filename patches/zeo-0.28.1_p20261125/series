@@ -185,6 +185,9 @@
 # 0202: Simplified Chinese -- locales/zh-CN/ with Zed's strings and Zeo's own screens, drafted
 # with Lara and revised. UNGROUPED and new files only (operator, 2026-11-26).
 0202-zeo-i18n-simplified-chinese-zh-cn-zed-s-strings-and-zeo-s-own-screens.patch
+# 0203: the Language page marks a translation no native speaker has reviewed -- the mark is a
+# line in that language's own zeo.ftl, deleted by its reviewer. UNGROUPED (operator, 2026-11-26).
+0203-zeo-i18n-the-language-page-marks-machine-translated-languages.patch
 
 # @feature: claude-agent-acp-plus
 0001-force-enable-claude-agent-acp-plus.patch

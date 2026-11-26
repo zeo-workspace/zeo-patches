@@ -136,6 +136,10 @@ class I18nCheckTest(TreeCase):
         pt = PT + "agent-sandbox-gone = Sumiu\n"
         self.assertEqual(self.kinds(self.tree(pt=pt)), ["stale"])
 
+    def test_the_machine_translation_mark_lives_only_in_a_translation(self):
+        pt = PT + "zeo-language-machine-translated = yes\n"
+        self.assertEqual(self.kinds(self.tree(pt=pt)), [])
+
     def test_a_translation_reading_an_unknown_variable_is_reported(self):
         pt = PT.replace("Ocultar o host", "Ocultar { $host }")
         self.assertEqual(self.kinds(self.tree(pt=pt)), ["foreign"])
