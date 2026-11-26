@@ -56,6 +56,9 @@ cases). Record: `/var/tmp/zp-bump1125-PROGRESS.md`.
 - New, in `claude-agent-acp-plus` at its end: `0186` (the sidebar row's Stop asks first) and
   `0189` (Summarize Session). New, in `ai-jail` at its end: `0187` (a paused jail shows Resume
   only) and `0188` (the lock's modal under the lock; turning on asks and restarts).
+- `0067` and `0175` name `sha2 0.10.9` in `Cargo.lock`: `6ba65ce3` brings `sha2 0.11.1` too,
+  so a bare `"sha2"` no longer resolves. `test.sh` and the ebuild build `--offline` and cargo
+  rewrote the line silently; the portable build's `--locked` refused it.
 - The Xvfb proofs (hub `docs/assets/zeo-batch-0280-2026-11-25/`) found two bugs fixed before
   the gates: a double-lease panic in `0189`'s New Thread/Sub-thread, which the unit harness
   cannot reach, and `0188`'s switch firing three times per click.
