@@ -31,6 +31,14 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.30.0_p20261125] — 2026-11-26
+
+Zeo `0.30.0` on the same Zed `6ba65ce3`: §6.52's remaining steps. The series is 197. Gates ran
+on bentoo-lab at the operator's choice: full `test.sh` 9574/9574 (job `20261126-193913-27e0a1`,
+under the series' previous name, same patches); `agent_ui` + `gpui` 2370/2370 with rustfmt and
+clippy clean on the changed files; check-sync and verify under the new name in the release
+commit; Xvfb proof in hub `docs/assets/zeo-6.52-fadeout-scroll-2026-11-26/`.
+
 ### Series
 
 - New, in `claude-agent-acp-plus` after `0193`: `0204`. A card closed from Zeo's own controls
