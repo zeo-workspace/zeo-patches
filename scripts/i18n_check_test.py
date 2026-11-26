@@ -99,6 +99,26 @@ class I18nCheckTest(TreeCase):
         en = EN + "agent-sandbox-orphan = Nobody shows this\n"
         self.assertEqual(self.kinds(self.tree(en=en)), ["unused"])
 
+    def test_a_message_the_catalog_reads_itself_is_not_unused(self):
+        en = EN + "zeo-language-name = English (United States)\n"
+        self.assertEqual(self.kinds(self.tree(en=en)), [])
+
+    def test_zed_core_ids_are_read_by_hash_not_unused(self):
+        tree = self.tree(catalog='include!(concat!(env!("OUT_DIR"), "/shipped.rs"));')
+        core = tree / "crates/zeo_i18n/locales/en-US/zed-core.ftl"
+        core.write_text("zed-af63dc4c8601ec8c = a\n", encoding="utf-8")
+        self.assertEqual(self.kinds(tree), [])
+
+    def test_a_zed_core_translation_must_keep_its_placeholders(self):
+        tree = self.tree(catalog='include!(concat!(env!("OUT_DIR"), "/shipped.rs"));')
+        en = tree / "crates/zeo_i18n/locales/en-US/zed-core.ftl"
+        pt = tree / "crates/zeo_i18n/locales/pt-BR/zed-core.ftl"
+        en.write_text("zed-0000000000000001 = Discard %1 to %2 files?\n", encoding="utf-8")
+        pt.write_text("zed-0000000000000001 = Descartar %1 arquivos?\n", encoding="utf-8")
+        self.assertEqual(self.kinds(tree), ["placeholder"])
+        pt.write_text("zed-0000000000000001 = %2 arquivos: descartar %1?\n", encoding="utf-8")
+        self.assertEqual(self.kinds(tree), [])
+
     def test_a_missing_or_extra_variable_is_reported(self):
         missing = CODE_OK.replace("count = jails.len()", "")
         self.assertEqual(self.kinds(self.tree(code=missing)), ["variables"])

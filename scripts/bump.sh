@@ -9,6 +9,8 @@
 #   2. verify       confirm the regenerated series applies, from a clean baseline
 #      rebrand      ...and brings in nothing new that still says "Zed"
 #                   (check-rebrand.sh; a new entry is a decision, so it stops here)
+#      strings      ...and list the UI text Zeo's catalog lacks (check-strings.sh;
+#                   reported only: an untranslated string just stays English)
 #   3. sync         copy it into the overlay's files/
 #   4. check-sync   confirm all three relations agree afterwards
 #
@@ -143,6 +145,13 @@ bash "${SCRIPTS}/verify.sh" "${to}" || exit 1
 # with an installed Zed, and that must not reach the overlay untriaged.
 step '2/4 rebrand — anything new upstream that still says "Zed"?'
 bash "${SCRIPTS}/check-rebrand.sh" "${to}" || exit 1
+
+# Zed's own UI text (0195 translates it from a catalog generated off the source). A new
+# upstream string only stays English until the catalog follows, so this reports and never
+# gates: the exit code is the next steps' business, not this one's.
+step '2/4 strings — new or gone Zed UI text for the catalog?'
+bash "${SCRIPTS}/check-strings.sh" "${to}" ||
+	say "the catalog lags the source: carry the new en-US zed-core.ftl into 0195, then translate"
 
 # --- 3. sync -----------------------------------------------------------------
 

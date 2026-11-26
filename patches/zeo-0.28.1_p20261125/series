@@ -152,6 +152,21 @@
 # screen that translates its strings does so under whatever flag gates that screen,
 # so the crate has to be there for every combination (docs/I18N-PROPOSAL.md, hub).
 0177-zeo-i18n-a-translation-catalog-for-zeo-s-own-screens.patch
+# 0194: a Language page in the settings window picks ui_language -- System, every language
+# zeo_i18n ships (each named in itself), and the en-XA pseudo-locale; applied live.
+# UNGROUPED, right after 0177, so it touches only lines every USE combination has;
+# settings_ui depends on zeo_i18n here, not in 0178 (operator, 2026-11-26).
+0194-settings-ui-a-language-page-picks-zeo-s-interface-language.patch
+# 0195 (spike): Zed's own strings through the catalog -- ui's Label, Button and Tooltip
+# constructors pass their text to ui::zeo_text::translate, which zeo_i18n answers from
+# locales/<language>/zed-core.ftl under ids derived from the English (FNV-1a 64);
+# scripts/i18n-extract.py generates en-US's. UNGROUPED, right after 0194: every combination
+# shows Zed's UI (operator, 2026-11-26: translate the whole interface).
+0195-ui-zeo-i18n-zed-s-own-labels-buttons-and-tooltips-ask-the-catalog.patch
+# 0196 (pilot): Spanish -- locales/es/ with Zed's strings and Zeo's own screens, drafted
+# with Lara and revised. UNGROUPED and new files only, so any USE set applies it; a build
+# without a group ships that group's es messages unused (operator, 2026-11-26).
+0196-zeo-i18n-spanish-es-zed-s-strings-and-zeo-s-own-screens-pilot.patch
 
 # @feature: claude-agent-acp-plus
 0001-force-enable-claude-agent-acp-plus.patch

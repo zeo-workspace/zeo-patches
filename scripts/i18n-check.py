@@ -16,7 +16,8 @@
   unlisted     an .ftl file on disk that catalog.rs does not embed, so it would never ship;
                (only with a hand-kept list: build.rs's generated one ships every file);
   absent       an .ftl file catalog.rs embeds that is not on disk -- the build would fail;
-  literal      a sentence left as a string literal in a file that already uses t!.
+  literal      a sentence left as a string literal in a file that already uses t!;
+  placeholder  a zed-core translation whose %1, %2... differ from its English template.
 
 Why a script and
 not a build.rs: a build script sees only its own crate, never the t! calls in the crates that
@@ -49,6 +50,12 @@ NOT_TEXT_LINE = re.compile(
 SHIPPED_FILE = re.compile(r'include_str!\("\.\./locales/([^"]+\.ftl)"\)')
 # Since the bump to Zed 6ba65ce3 (2026-11-25) build.rs lists every locales/*/*.ftl into
 # $OUT_DIR and catalog.rs includes it, so a file on disk always ships and none can be absent.
+# Messages zeo_i18n reads by id itself, never through t!: each language's name for itself,
+# shown in the Language page's picker (catalog.rs LANGUAGE_NAME_ID, patch 0194).
+READ_BY_THE_CATALOG = frozenset({"zeo-language-name"})
+# Zed's own strings (patch 0195): ids derived from the English, looked up by core_text.rs when
+# ui's constructors pass the text in, never through t!. Written by scripts/i18n-extract.py.
+CORE_FILE = "zed-core.ftl"
 GENERATED_SHIPPED = re.compile(r'include!\(concat!\(env!\("OUT_DIR"\), "/shipped\.rs"\)\)')
 
 
@@ -220,7 +227,9 @@ def check(tree: pathlib.Path) -> list[str]:
 
     used_messages = {key.split(".", 1)[0] for key in used}
     for key, (_, _, where) in sorted(english.items()):
-        if "." not in key and key not in used_messages:
+        if where.split(":", 1)[0].endswith(CORE_FILE):
+            continue
+        if "." not in key and key not in used_messages and key not in READ_BY_THE_CATALOG:
             problems.append(f"unused       {where}: {key!r} is used nowhere")
 
     for language, entries in sorted(catalogs.items()):
@@ -234,6 +243,36 @@ def check(tree: pathlib.Path) -> list[str]:
             elif extra := names - english[key][0]:
                 problems.append(
                     f"foreign var  {where}: {key!r} reads {sorted(extra)}, which {FALLBACK} never gets"
+                )
+    problems.extend(core_placeholder_problems(locales_dir, tree))
+    return problems
+
+
+CORE_LINE = re.compile(r"^(zed-[0-9a-f]{16}) = (.*)$", re.M)
+TEMPLATE_SLOT = re.compile(r"%(\d+)")
+
+
+def core_placeholder_problems(locales_dir: pathlib.Path, tree: pathlib.Path) -> list[str]:
+    """A zed-core translation must keep its template's %1, %2... (core_text.rs fills them):
+    one dropped loses a value on screen, one invented shows as a bare %n."""
+    english_file = locales_dir / FALLBACK / CORE_FILE
+    if not english_file.is_file():
+        return []
+    english = {
+        key: sorted(TEMPLATE_SLOT.findall(value))
+        for key, value in CORE_LINE.findall(english_file.read_text(encoding="utf-8"))
+    }
+    problems = []
+    for core in sorted(locales_dir.glob(f"*/{CORE_FILE}")):
+        if core.parent.name == FALLBACK:
+            continue
+        text = core.read_text(encoding="utf-8")
+        for key, value in CORE_LINE.findall(text):
+            if key in english and sorted(TEMPLATE_SLOT.findall(value)) != english[key]:
+                line = text[: text.index(f"{key} = ")].count("\n") + 1
+                problems.append(
+                    f"placeholder  {core.relative_to(tree)}:{line}: {key!r} has "
+                    f"{sorted(TEMPLATE_SLOT.findall(value))}, {FALLBACK} has {english[key]}"
                 )
     return problems
 
