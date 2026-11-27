@@ -31,6 +31,39 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.31.0_p20261127] — 2026-11-27
+
+Zeo `0.31.0` on Zed `46375fbf` (from `6ba65ce3`: 15 commits, `Cargo.lock` unchanged). The series
+is 207. Gates, on the host (operator, 2026-11-27): verify 207/207, check-sync, release selections
+applied (Linux 205, Windows 171), full `test.sh` 9601/9601, clippy `-D warnings` and rustfmt clean
+on every touched crate, `i18n-check` 0; the Windows build compiled in the lab guest (PE checks
+ok); a full `ebuild compile` of the scratch ebuild built the editor, `cli`, `zed-extension` and,
+in its own run, a `remote-server` linking no X11 (the install phase needs root and was not run);
+Xvfb proof in hub `docs/assets/zeo-0207-0215-xvfb-2026-11-27/`.
+
+### Series
+
+- Refreshed onto `46375fbf`: 103 patches rewritten, order unchanged. `0132` adapted to upstream's
+  subagent retry: Stop stays while a retry waits (`is_live()`). Reviewed against the 15 commits:
+  `0062` and `0190` keep their protection.
+- New, `ai-jail` group, after `0206`: `0207` (a project's chosen vault secrets reach its jail as
+  `--env` + `--secret NAME=hosts`, fail closed; needs ai-jail 3.7.1-r1's HTTPS injection), `0208`
+  (the Secrets block on the Agent Sandbox page), `0209` (`agent::StopJailedAgent`, the kill switch
+  from the palette), `0210` (a remote project's lock warns), `0211` (`host:PORT` entries,
+  probe-gated, and `agent_sandbox.ssh_agent_socket`), `0213` (`0190`'s driver listing gives up
+  after 5 s), `0215` (`zeo-terminals` in a jail's Capabilities).
+- New, `claude-agent-acp-plus` group: `0212` after `0062` (a FIFO config no longer hangs the
+  worktree screen), `0214` after `0205` (Share with Agent per terminal tab, and the
+  `zeo-terminals` MCP server over MCP-over-ACP, `agent.zeo_terminals`).
+- `0124`'s header: app-editors/zeo installs the server with `USE=remote-server`.
+
+### Ebuild
+
+- §6.60: `+remote-server` (its own cargo run, `/usr/libexec/zeo-remote-server`), `+extensions-cli`
+  (`zeo-extension`), `+system-node` (`>=net-libs/nodejs-24[npm]`), `telemetry` (off: default.json's
+  `diagnostics`/`metrics` false), `neovim? ( test )`; the browser extension is Chromium-only (no
+  Firefox manifest, no `www-plugins/zeo-browser`); metadata updated.
+
 ## [0.30.0_p20261125] — 2026-11-26
 
 Zeo `0.30.0` on the same Zed `6ba65ce3`: §6.52's remaining steps. The series is 197. Gates ran
