@@ -920,6 +920,10 @@
 # drivers switched off; the jailed root's .git keeps its trust but loses its drivers too (security
 # audit 2026-11-21 lead 1, confirmed 2026-11-26; operator, 2026-11-26: options 1 and 3 of §6.61).
 0190-agent-sandbox-git-a-repository-a-jailed-agent-can-write-runs-none-of-its.patch
+# 0206: a secret declares the variable a jail sees and the hosts its value may reach (zeo-env,
+# zeo-hosts on the keyring item, not settings), and secret_vault gains read() (proposal §6.53
+# step 1; operator, 2026-11-27). Nothing reaches a jail yet. On 0162/0180 and the locales.
+0206-secret-vault-settings-ui-a-secret-declares-the-variable-a-jail-sees.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
