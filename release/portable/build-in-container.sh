@@ -39,6 +39,16 @@ log "${n} patches applied"
 # the ebuild makes, so a .deb and the Gentoo package carry the same entry.
 cp /in/icons/app-icon-zeo.png /in/icons/app-icon-zeo@2x.png crates/zed/resources/
 echo "zeo" > crates/zed/RELEASE_CHANNEL
+
+# Zeo next §6.60: zeo-bin ships without Zed's usage reports by default, as app-editors/zeo does
+# without USE=telemetry -- the two booleans of default.json's "telemetry" block.
+sed -e '/"telemetry": {/,/}/ s/"diagnostics": true/"diagnostics": false/' \
+	-e '/"telemetry": {/,/}/ s/"metrics": true/"metrics": false/' \
+	-i assets/settings/default.json
+grep -q '"metrics": false' assets/settings/default.json || {
+	echo "telemetry defaults not found in default.json" >&2
+	exit 1
+}
 export APP_CLI="zeo" APP_ID="dev.zeo.Zeo" APP_ICON="dev.zeo.Zeo" APP_NAME="Zeo" \
 	APP_ARGS="%U" DO_STARTUP_NOTIFY="true"
 envsubst < crates/zed/resources/zed.desktop.in > "${APP_ID}.desktop"
