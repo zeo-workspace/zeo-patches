@@ -818,6 +818,9 @@
 0205-agent-ui-gpui-the-floating-thread-controls-scroll-with-a-short-ease-out.patch
 # 0214 (§6.71): terminals shared per tab, readable by the agent through zeo-terminals.
 0214-agent-servers-zeo-terminals-the-terminals-you-share-readable-by-the-agent.patch
+# 0216: a list name is typed whole (0069's field was missing from the sidebar's key
+# context), and the minimized question bar counts questions, not cards (0082). On 0214.
+0216-sidebar-agent-ui-a-list-name-is-typed-whole-the-question-bar-counts-questions.patch
 
 # @feature: claude-code-ide
 0002-claude-code-ide-integration.patch
@@ -941,6 +944,10 @@
 0213-git-the-agent-reach-driver-listing-gives-up-on-a-git-that-never-answers.patch
 # 0215 (§6.71): a jail's Capabilities offer zeo-terminals.
 0215-settings-ui-a-jail-s-capabilities-offer-zeo-terminals.patch
+# 0217: the 2026-11-27 security review of 0.31.0 (Z1-Z3, Z5-Z10): a jailed agent's login
+# runs Zeo's own program in a private dir, the state root leaves /var/tmp, Zeo starts the
+# jails' ssh-agent, the kill switch escalates. On 0215.
+0217-agent-sandbox-agent-ui-agent-servers-fixes-from-the-0-31-0-security-review.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox

@@ -31,6 +31,30 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.32.0_p20261127] — 2026-11-27
+
+Zeo `0.32.0`, same Zed snapshot `46375fbf`. The series is 209: two patches added, none
+regenerated.
+
+- **`0216`** (`claude-agent-acp-plus` group, after `0214`): 0069's Lists name field joins the
+  sidebar's `editing` key context, and 0082's minimized question bar counts form pages, not
+  cards. Ships on Linux and Windows.
+- **`0217`** (`ai-jail` group, after `0215`; Linux only): the fixes from the 2026-11-27 security
+  review of 0.31.0 (hub `docs/assets/security-review-0.31.0-2026-11-27/`, Z1-Z3 and Z5-Z10). It
+  adds `LaunchRecord::login_program` and the setting `agent_sandbox.ssh_agent`, and turns
+  `agent_sandbox.ssh_agent_socket` into a refusal; the state root default moves to
+  `~/.local/state/zeo/jail`. A minor version because of those two settings (`zeo/docs/RELEASING.md`).
+  It pairs with `sys-apps/ai-jail-3.7.1-r2` (the fork's `fix/secret-scope`), but does not need
+  it: the two fix different halves.
+
+Gates: verify 209/209 (host); release selections apply (Linux 207 with both patches, Windows 172
+with `0216` only); `i18n-check` 0; full `test.sh` 9611/9611 and clippy clean on the touched
+crates on bentoo-lab (job `20261127-235042-b04460`, through the scratch `lab-overlay-0311`, the
+builder image predating 0.31.0); Xvfb red/green of `0216` (hub
+`docs/assets/zeo-0311-xvfb-2026-11-27/`). Not run: the Windows build, a live jail (login,
+ssh-agent, Stop), `0217` on Xvfb. The strings-only rename of "0.31.1" to "0.32.0" in `0217` came
+after the lab run.
+
 ## [0.31.0_p20261127] — 2026-11-27
 
 Zeo `0.31.0` on Zed `46375fbf` (from `6ba65ce3`: 15 commits, `Cargo.lock` unchanged). The series
