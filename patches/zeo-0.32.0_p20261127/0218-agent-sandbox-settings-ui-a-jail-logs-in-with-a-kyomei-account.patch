@@ -795,10 +795,10 @@ index a5ec346..bbe213f 100644
  zed_actions.workspace = true
 diff --git a/crates/settings_ui/src/pages/agent_jail_account.rs b/crates/settings_ui/src/pages/agent_jail_account.rs
 new file mode 100644
-index 0000000..a4be0bb
+index 0000000..7b1ba5c
 --- /dev/null
 +++ b/crates/settings_ui/src/pages/agent_jail_account.rs
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,269 @@
 +//! The Agent Sandbox page's Claude account block (Zeo next §6.65): which kyomei account this
 +//! project's jail logs in with, or its own login as before. A kyomei account is delivered as an
 +//! access token alone before each start, so a new project needs no login; "Connect a new
@@ -979,6 +979,21 @@ index 0000000..a4be0bb
 +        move |_, _, cx| state.update(cx, |state, cx| state.reload_accounts(cx))
 +    });
 +
++    // Wrapped like the page's other buttons: without it Tab skips them (Xvfb proof, 2026-11-28).
++    let connect = reveal(
++        state,
++        "agent-jail-account-connect",
++        scroll_handle,
++        connect,
++        cx,
++    );
++    let refresh = reveal(
++        state,
++        "agent-jail-account-refresh",
++        scroll_handle,
++        refresh,
++        cx,
++    );
 +    v_flex()
 +        .gap_2()
 +        .debug_selector(|| "agent-jail-account".into())
