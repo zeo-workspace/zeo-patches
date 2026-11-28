@@ -31,6 +31,15 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+- **`0218`** (`ai-jail` group, after `0217`; Linux only): a jail logs in with a kyomei account
+  (Zeo next §6.65, first step of §6.70). New settings `agent_sandbox.account`,
+  `agent_sandbox.projects[root].account` and `agent_sandbox.kyomei_path`; before each jailed
+  start `kyomei deliver` writes an access-token-only credential into the project's `claude/`,
+  and a failed delivery refuses the start (`cause=account`). The Agent Sandbox page gains a
+  Claude account block with "Connect a new account…" (`kyomei add` in a workspace terminal).
+  `settings_ui` now depends on `task`. Needs kyomei with the local keyring (2026-11-28) at run
+  time only; no build dependency.
+
 ## [0.32.0_p20261127] — 2026-11-27
 
 Zeo `0.32.0`, same Zed snapshot `46375fbf`. The series is 209: two patches added, none

@@ -948,6 +948,10 @@
 # runs Zeo's own program in a private dir, the state root leaves /var/tmp, Zeo starts the
 # jails' ssh-agent, the kill switch escalates. On 0215.
 0217-agent-sandbox-agent-ui-agent-servers-fixes-from-the-0-31-0-security-review.patch
+# 0218 (§6.65): a jail logs in with a kyomei account -- kyomei writes an access-token-only
+# credential into the project's claude/ before each start; the page picks the account and
+# connects a new one (`kyomei add`). On 0217.
+0218-agent-sandbox-settings-ui-a-jail-logs-in-with-a-kyomei-account.patch
 
 # @feature: browser-extension
 # 0058: the browser sidebar (story 045) -- zeo-browser, a local Chrome/Firefox
