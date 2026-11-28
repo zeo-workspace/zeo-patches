@@ -31,6 +31,11 @@ bumps inside a range are summarised rather than listed one by one.
 
 ## [Unreleased]
 
+## [0.33.0_p20261127] — 2026-11-28
+
+Zeo `0.33.0`, same Zed snapshot `46375fbf`. The series is 210: one patch added, none
+regenerated. Full suite on bentoo-lab: 9626 passed, 29 skipped; clippy clean on the touched crates.
+
 - **`0218`** (`ai-jail` group, after `0217`; Linux only): a jail logs in with a kyomei account
   (Zeo next §6.65, first step of §6.70). New settings `agent_sandbox.account`,
   `agent_sandbox.projects[root].account` and `agent_sandbox.kyomei_path`; before each jailed
