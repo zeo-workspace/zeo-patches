@@ -39,9 +39,13 @@ existing account inside kyomei or connect a new one", done directly.
   reads the list again when it ends; and Refresh.
 - Messages in the nine languages.
 
-Not covered here: whether a running Claude Code re-reads a badge kyomei rewrote under it (kyomei
-redelivers at an hour left, from its systemd --user timer); until that is measured, a session
-older than the token's ~8 h may need the lock's restart.
+Measured live on 2026-11-28 with a real login, Claude Code 2.1.332: a badge alone answers a
+`claude -p` turn and the file is left untouched (R9 holds); kyomei's renewal against the real
+endpoint rotates, and a second one succeeds, so the rotated token was persisted; a renewal
+REVOKES the previous access token ("OAuth token revoked"), so every directory of the account is
+redelivered at once; and a running session whose token was revoked and rewritten under it
+answered its next turn -- Claude Code re-reads the file. A long session therefore survives a
+renewal without a restart.
 
 Tests: agent_sandbox `jail_account_tests` (default, own choice, opt-out, schema version, exit 3,
 argv of a fake kyomei); settings_ui `agent_jail_account_tests` (rows, one switch on, a choice
